@@ -28,6 +28,7 @@ export default function SearchPage() {
     const handleSearch = async (query: string, tagIds: string[], senderId?: string) => {
         if (!currentCompany) return;
 
+        console.log('Search params:', { query, tagIds, senderId, company_id: currentCompany.id });
         setIsLoading(true);
         try {
             const { documents } = await documentsApi.search({
@@ -36,6 +37,7 @@ export default function SearchPage() {
                 tag_ids: tagIds.length > 0 ? tagIds : undefined,
                 sender_id: senderId || undefined,
             });
+            console.log('Search results:', documents);
             setSearchResults(documents);
             setHighlightedIds(documents.map(d => d.id));
         } catch (error) {

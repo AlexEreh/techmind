@@ -76,12 +76,13 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   return (
     <div className="relative">
       {showRoot && (
-        <div className={`flex items-center py-1 ${selectedFolderId === null ? 'bg-blue-100' : ''}`}>
+        <div className={`flex items-center py-1 hover:bg-default-100 ${selectedFolderId === null ? 'bg-primary/20' : ''}`}>
           <button
             className="flex items-center w-full text-left"
             onClick={() => onFolderSelect(null)}
           >
-            <FolderIcon className="mr-2" />
+            <span className="w-6" /> {/* Спейсер для выравнивания с папками с иконками шеврона */}
+            <FolderIcon className="ml-1 mr-2" />
             <span className="font-bold">Корень</span>
           </button>
         </div>

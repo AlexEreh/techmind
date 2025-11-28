@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"io"
-	"techmind/schema/ent"
 	"time"
+
+	"techmind/schema/ent"
 
 	"github.com/google/uuid"
 )
@@ -69,9 +70,10 @@ type DocumentUpdateInput struct {
 
 // DocumentWithTags содержит документ вместе с его тегами
 type DocumentWithTags struct {
-	Document   *ent.Document
-	Tags       []*ent.Tag
-	PreviewURL string
+	Document    *ent.Document
+	Tags        []*ent.Tag
+	PreviewURL  string
+	DownloadURL string
 }
 
 // DocumentService определяет интерфейс для работы с документами

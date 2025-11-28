@@ -20,6 +20,7 @@ type DocumentResponse struct {
 	CompanyID       uuid.UUID  `json:"company_id" example:"550e8400-e29b-41d4-a716-446655440001"`
 	FolderID        *uuid.UUID `json:"folder_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440002"`
 	SenderID        *uuid.UUID `json:"sender_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440003"`
+	Name            string     `json:"name" example:"document.pdf"`
 	FilePath        string     `json:"file_path" example:"documents/550e8400-e29b-41d4-a716-446655440000.pdf"`
 	PreviewFilePath *string    `json:"preview_file_path,omitempty" example:"previews/550e8400-e29b-41d4-a716-446655440000.jpg"`
 	FileSize        int64      `json:"file_size" example:"1024000"`

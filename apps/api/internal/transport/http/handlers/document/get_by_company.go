@@ -66,6 +66,7 @@ func (h *GetByCompanyHandler) Handle(c fiber.Ctx) error {
 			CompanyID:       docWithTags.Document.CompanyID,
 			FolderID:        docWithTags.Document.FolderID,
 			SenderID:        docWithTags.Document.SenderID,
+			Name:            docWithTags.Document.Name,
 			FilePath:        docWithTags.Document.FilePath,
 			PreviewFilePath: docWithTags.Document.PreviewFilePath,
 			FileSize:        docWithTags.Document.FileSize,
@@ -74,6 +75,7 @@ func (h *GetByCompanyHandler) Handle(c fiber.Ctx) error {
 			CreatedAt:       docWithTags.Document.CreatedAt,
 			Tags:            tags,
 			PreviewURL:      docWithTags.PreviewURL,
+			DownloadURL:     docWithTags.DownloadURL,
 		})
 	}
 

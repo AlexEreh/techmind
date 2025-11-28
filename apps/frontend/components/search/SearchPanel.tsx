@@ -59,9 +59,11 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
   };
 
   const toggleTag = (tagId: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    );
+    setSelectedTags((prev) => {
+      const updated = prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId];
+      console.log('Selected tags updated:', updated);
+      return updated;
+    });
   };
 
   return (
@@ -84,7 +86,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
           {allTags.map((tag) => (
             <Chip
               key={tag.id}
-              //onPress={() => toggleTag(tag.id)}
+              onClick={() => toggleTag(tag.id)}
               variant={selectedTags.includes(tag.id) ? 'solid' : 'bordered'}
               color={selectedTags.includes(tag.id) ? 'primary' : 'default'}
               className="cursor-pointer"
@@ -104,7 +106,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
           variant="bordered"
         >
           {allSenders.map((sender) => (
-            <SelectItem key={sender.id} value={sender.id}>
+            <SelectItem key={sender.id}>
               {sender.name} {sender.email && `(${sender.email})`}
             </SelectItem>
           ))}

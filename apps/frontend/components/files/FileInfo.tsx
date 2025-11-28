@@ -121,7 +121,7 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate }) => {
             .map((tag) => (
               <Chip
                 key={tag.id}
-                onPress={() => handleAddTag(tag.id)}
+                onClick={() => handleAddTag(tag.id)}
                 variant="bordered"
                 className="cursor-pointer hover:bg-default-100"
               >

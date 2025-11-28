@@ -10,6 +10,11 @@ import (
 const UserIDContextKey = "user_id"
 const CompanyIDContextKey = "company_id"
 
+// ErrorResponse представляет стандартный ответ с ошибкой
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 // GetUserIDFromContext извлекает user_id из контекста
 func GetUserIDFromContext(c fiber.Ctx) (uuid.UUID, error) {
 	userID := c.Locals(UserIDContextKey)
@@ -38,9 +43,4 @@ func GetCompanyIDFromContext(c fiber.Ctx) (uuid.UUID, error) {
 	}
 
 	return id, nil
-}
-
-// ErrorResponse представляет ответ с ошибкой
-type ErrorResponse struct {
-	Error string `json:"error" example:"error message"`
 }

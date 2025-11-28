@@ -66,6 +66,7 @@ func (h *UpdateHandler) Handle(c fiber.Ctx) error {
 		CompanyID:       document.CompanyID,
 		FolderID:        document.FolderID,
 		SenderID:        document.SenderID,
+		Name:            document.Name,
 		FilePath:        document.FilePath,
 		PreviewFilePath: document.PreviewFilePath,
 		FileSize:        document.FileSize,

@@ -110,10 +110,14 @@ func (s *documentService) GetByID(ctx context.Context, documentID uuid.UUID) (*s
 	// Получаем preview URL
 	previewURL, _ := s.GetPreviewURL(ctx, documentID)
 
+	// Получаем download URL
+	downloadURL, _ := s.GetDownloadURL(ctx, documentID)
+
 	return &service.DocumentWithTags{
-		Document:   document,
-		Tags:       tags,
-		PreviewURL: previewURL,
+		Document:    document,
+		Tags:        tags,
+		PreviewURL:  previewURL,
+		DownloadURL: downloadURL,
 	}, nil
 }
 
@@ -129,11 +133,13 @@ func (s *documentService) GetByFolder(ctx context.Context, folderID uuid.UUID) (
 	for _, doc := range documents {
 		tags, _ := s.getDocumentTags(ctx, doc.ID)
 		previewURL, _ := s.GetPreviewURL(ctx, doc.ID)
+		downloadURL, _ := s.GetDownloadURL(ctx, doc.ID)
 
 		result = append(result, &service.DocumentWithTags{
-			Document:   doc,
-			Tags:       tags,
-			PreviewURL: previewURL,
+			Document:    doc,
+			Tags:        tags,
+			PreviewURL:  previewURL,
+			DownloadURL: downloadURL,
 		})
 	}
 
@@ -152,11 +158,13 @@ func (s *documentService) GetByCompany(ctx context.Context, companyID uuid.UUID)
 	for _, doc := range documents {
 		tags, _ := s.getDocumentTags(ctx, doc.ID)
 		previewURL, _ := s.GetPreviewURL(ctx, doc.ID)
+		downloadURL, _ := s.GetDownloadURL(ctx, doc.ID)
 
 		result = append(result, &service.DocumentWithTags{
-			Document:   doc,
-			Tags:       tags,
-			PreviewURL: previewURL,
+			Document:    doc,
+			Tags:        tags,
+			PreviewURL:  previewURL,
+			DownloadURL: downloadURL,
 		})
 	}
 
@@ -291,11 +299,13 @@ func (s *documentService) Search(ctx context.Context, companyID uuid.UUID, query
 	for _, doc := range documents {
 		tags, _ := s.getDocumentTags(ctx, doc.ID)
 		previewURL, _ := s.GetPreviewURL(ctx, doc.ID)
+		downloadURL, _ := s.GetDownloadURL(ctx, doc.ID)
 
 		result = append(result, &service.DocumentWithTags{
-			Document:   doc,
-			Tags:       tags,
-			PreviewURL: previewURL,
+			Document:    doc,
+			Tags:        tags,
+			PreviewURL:  previewURL,
+			DownloadURL: downloadURL,
 		})
 	}
 
