@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/lazyecm.iml" filepath="$PROJECT_DIR$/.idea/lazyecm.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/lazycrm.iml" filepath="$PROJECT_DIR$/.idea/lazycrm.iml" />
     </modules>
   </component>
 </project>
