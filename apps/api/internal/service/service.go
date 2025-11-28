@@ -112,6 +112,11 @@ type DocumentService interface {
 
 	// Search ищет документы по различным критериям
 	Search(ctx context.Context, companyID uuid.UUID, query string, folderID *uuid.UUID, tagIDs []uuid.UUID) ([]*DocumentWithTags, error)
+
+	// GeneratePDFPreview конвертирует файл документа в PDF превью и загружает его в MinIO
+	// Поддерживает конвертацию Office документов (docx, xlsx, pptx и т.д.) через Gotenberg
+	// После успешной конвертации обновляет ссылку на preview в базе данных
+	GeneratePDFPreview(ctx context.Context, documentID uuid.UUID) error
 }
 
 // DocumentTagService определяет интерфейс для работы с тегами документов

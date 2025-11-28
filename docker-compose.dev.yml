@@ -8,6 +8,8 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    networks:
+      - shared_network
 
   minio:
     image: minio/minio:latest
@@ -18,6 +20,19 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
+    networks:
+      - shared_network
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    ports:
+      - "3030:3000"
+    command:
+      - "gotenberg"
+      - "--api-timeout=60s"
+      - "--log-level=info"
+    networks:
+      - shared_network
 
 #  elasticsearch:
 #    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
@@ -32,3 +47,7 @@ services:
 #      memlock:
 #        soft: -1
 #        hard: -1
+
+networks:
+  shared_network:
+    driver: bridge

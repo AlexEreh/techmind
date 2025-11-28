@@ -34,10 +34,17 @@ export default function RootLayout({
     <html suppressHydrationWarning lang="ru">
       <head />
       <body
-        className={clsx(
-          "min-h-screen text-foreground bg-background font-sans antialiased",
-          fontSans.variable,
-        )}
+          className={clsx(
+              "min-h-screen text-foreground font-sans antialiased",
+              fontSans.variable,
+          )}
+          style={{
+              backgroundImage:
+                  'url("https://media.sketchfab.com/models/c46b152c6f904de799bff4415794d07c/thumbnails/63c01b440f1848f588b99edd9a47e408/53d062c22a204cdb848f10363b21efa1.jpeg")',
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+          }}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           {children}
