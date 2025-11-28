@@ -24,6 +24,11 @@ type Config struct {
 		Username string `yaml:"username" mapstructure:"username"`
 		Password string `yaml:"password" mapstructure:"password"`
 	} `yaml:"elasticsearch" mapstructure:"elasticsearch"`
+	Gotenberg struct {
+		URL     string `yaml:"url" mapstructure:"url"`
+		Enabled bool   `yaml:"enabled" mapstructure:"enabled"`
+		Timeout int    `yaml:"timeout" mapstructure:"timeout"` // in seconds
+	} `yaml:"gotenberg" mapstructure:"gotenberg"`
 	HTTPPort int `yaml:"http_port" mapstructure:"http_port"`
 
 	JWT struct {

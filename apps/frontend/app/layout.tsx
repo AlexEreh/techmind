@@ -34,10 +34,17 @@ export default function RootLayout({
     <html suppressHydrationWarning lang="ru">
       <head />
       <body
-        className={clsx(
-          "min-h-screen text-foreground bg-background font-sans antialiased",
-          fontSans.variable,
-        )}
+          className={clsx(
+              "min-h-screen text-foreground font-sans antialiased",
+              fontSans.variable,
+              "dark" // Ensure dark theme is applied
+          )}
+          style={{
+              backgroundImage: 'url("/bg.png")',
+              backgroundSize: "100% 100%", // Ensure the background image stretches to cover the entire screen
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+          }}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           {children}

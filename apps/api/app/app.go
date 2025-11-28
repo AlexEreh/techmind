@@ -2,6 +2,7 @@ package app
 
 import (
 	"techmind/internal/connetions/elasticsearch"
+	"techmind/internal/connetions/gotenberg"
 	"techmind/internal/connetions/minio"
 	"techmind/internal/connetions/postgres"
 	"techmind/internal/di"
@@ -14,6 +15,7 @@ var App = fx.Options(
 		postgres.New,
 		minio.New,
 		elasticsearch.New,
+		gotenberg.New,
 	),
 	di.Repository,
 	di.Service,

@@ -1,6 +1,7 @@
 package document
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	"techmind/internal/repo"
 	"techmind/internal/service"
+	"techmind/pkg/gotenberg"
 	"techmind/schema/ent"
 
 	"github.com/google/uuid"
@@ -90,12 +92,14 @@ var AllowedExtensions = map[string]bool{
 }
 
 type documentService struct {
-	documentRepo    repo.DocumentRepository
-	documentTagRepo repo.DocumentTagRepository
-	tagRepo         repo.TagRepository
-	folderRepo      repo.FolderRepository
-	minioClient     *minio.Client
-	bucketName      string
+	documentRepo     repo.DocumentRepository
+	documentTagRepo  repo.DocumentTagRepository
+	tagRepo          repo.TagRepository
+	folderRepo       repo.FolderRepository
+	minioClient      *minio.Client
+	bucketName       string
+	gotenbergClient  *gotenberg.Client
+	gotenbergEnabled bool
 }
 
 func NewService(
@@ -104,14 +108,19 @@ func NewService(
 	tagRepo repo.TagRepository,
 	folderRepo repo.FolderRepository,
 	minioClient *minio.Client,
+	gotenbergClient *gotenberg.Client,
 ) service.DocumentService {
+	gotenbergEnabled := gotenbergClient != nil
+
 	return &documentService{
-		documentRepo:    documentRepo,
-		documentTagRepo: documentTagRepo,
-		tagRepo:         tagRepo,
-		folderRepo:      folderRepo,
-		minioClient:     minioClient,
-		bucketName:      "documents",
+		documentRepo:     documentRepo,
+		documentTagRepo:  documentTagRepo,
+		tagRepo:          tagRepo,
+		folderRepo:       folderRepo,
+		minioClient:      minioClient,
+		bucketName:       "documents",
+		gotenbergClient:  gotenbergClient,
+		gotenbergEnabled: gotenbergEnabled,
 	}
 }
 
@@ -435,4 +444,158 @@ func (s *documentService) hasAllTags(docTags []*ent.Tag, tagIDs []uuid.UUID) boo
 	}
 
 	return true
+}
+
+// GeneratePDFPreview конвертирует файл документа в PDF превью и загружает его в MinIO
+// Поддерживает конвертацию Office документов (docx, xlsx, pptx и т.д.) через Gotenberg
+// После успешной конвертации обновляет ссылку на preview в базе данных
+func (s *documentService) GeneratePDFPreview(ctx context.Context, documentID uuid.UUID) error {
+	// Проверяем что Gotenberg доступен
+	if !s.gotenbergEnabled || s.gotenbergClient == nil {
+		return fmt.Errorf("gotenberg is not enabled or configured")
+	}
+
+	// Получаем документ из БД
+	document, err := s.documentRepo.GetByID(ctx, documentID)
+	if err != nil {
+		return fmt.Errorf("document not found: %w", err)
+	}
+
+	// Проверяем что документ поддерживает конвертацию
+	if !s.isConvertibleToPDF(document.MimeType) {
+		return fmt.Errorf("document type %s is not convertible to PDF", document.MimeType)
+	}
+
+	// Скачиваем оригинальный файл из MinIO
+	object, err := s.minioClient.GetObject(ctx, s.bucketName, document.FilePath, minio.GetObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get file from minio: %w", err)
+	}
+	defer object.Close()
+
+	// Читаем содержимое файла в память
+	fileContent, err := io.ReadAll(object)
+	if err != nil {
+		return fmt.Errorf("failed to read file content: %w", err)
+	}
+
+	// Определяем имя файла для конвертации
+	fileName := filepath.Base(document.FilePath)
+
+	// Конвертируем в PDF через Gotenberg
+	var pdfResponse *gotenberg.Response
+
+	// Используем LibreOffice для Office документов
+	if s.isOfficeDocument(document.MimeType) {
+		pdfResponse, err = s.gotenbergClient.ConvertOfficeToPDF(
+			ctx,
+			[]gotenberg.File{
+				{
+					Name:    fileName,
+					Content: fileContent,
+				},
+			},
+			&gotenberg.LibreOfficeRequest{
+				Landscape:        false,
+				SinglePageSheets: true,
+				OutputFilename:   "preview",
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to convert office document to PDF: %w", err)
+		}
+	} else {
+		return fmt.Errorf("unsupported document type for conversion: %s", document.MimeType)
+	}
+
+	// Генерируем путь для preview файла
+	previewID := uuid.New()
+	previewObjectName := fmt.Sprintf(
+		"%s/previews/%s.pdf",
+		document.CompanyID.String(),
+		previewID.String(),
+	)
+
+	// Загружаем PDF preview в MinIO
+	_, err = s.minioClient.PutObject(
+		ctx,
+		s.bucketName,
+		previewObjectName,
+		bytes.NewReader(pdfResponse.Body),
+		int64(len(pdfResponse.Body)),
+		minio.PutObjectOptions{
+			ContentType: "application/pdf",
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to upload preview to minio: %w", err)
+	}
+
+	// Обновляем путь к preview в базе данных
+	err = s.documentRepo.UpdatePreviewPath(ctx, documentID, previewObjectName)
+	if err != nil {
+		// Если не удалось обновить БД, удаляем загруженный preview
+		_ = s.minioClient.RemoveObject(ctx, s.bucketName, previewObjectName, minio.RemoveObjectOptions{})
+		return fmt.Errorf("failed to update preview path in database: %w", err)
+	}
+
+	return nil
+}
+
+// isConvertibleToPDF проверяет, можно ли сконвертировать документ в PDF
+func (s *documentService) isConvertibleToPDF(mimeType string) bool {
+	convertibleTypes := []string{
+		// Microsoft Office
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",   // docx
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",         // xlsx
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation", // pptx
+		"application/msword",            // doc
+		"application/vnd.ms-excel",      // xls
+		"application/vnd.ms-powerpoint", // ppt
+
+		// OpenDocument
+		"application/vnd.oasis.opendocument.text",         // odt
+		"application/vnd.oasis.opendocument.spreadsheet",  // ods
+		"application/vnd.oasis.opendocument.presentation", // odp
+
+		// Rich Text
+		"application/rtf",
+		"text/rtf",
+
+		// HTML
+		"text/html",
+	}
+
+	for _, ct := range convertibleTypes {
+		if strings.EqualFold(mimeType, ct) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isOfficeDocument проверяет, является ли документ Office файлом
+func (s *documentService) isOfficeDocument(mimeType string) bool {
+	officeTypes := []string{
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+		"application/msword",
+		"application/vnd.ms-excel",
+		"application/vnd.ms-powerpoint",
+		"application/vnd.oasis.opendocument.text",
+		"application/vnd.oasis.opendocument.spreadsheet",
+		"application/vnd.oasis.opendocument.presentation",
+		"application/rtf",
+		"text/rtf",
+	}
+
+	for _, ot := range officeTypes {
+		if strings.EqualFold(mimeType, ot) {
+			return true
+		}
+	}
+
+	return false
 }
