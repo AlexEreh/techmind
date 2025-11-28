@@ -92,14 +92,13 @@ var AllowedExtensions = map[string]bool{
 }
 
 type documentService struct {
-	documentRepo     repo.DocumentRepository
-	documentTagRepo  repo.DocumentTagRepository
-	tagRepo          repo.TagRepository
-	folderRepo       repo.FolderRepository
-	minioClient      *minio.Client
-	bucketName       string
-	gotenbergClient  *gotenberg.Client
-	gotenbergEnabled bool
+	documentRepo    repo.DocumentRepository
+	documentTagRepo repo.DocumentTagRepository
+	tagRepo         repo.TagRepository
+	folderRepo      repo.FolderRepository
+	minioClient     *minio.Client
+	bucketName      string
+	gotenbergClient *gotenberg.Client
 }
 
 func NewService(
@@ -110,17 +109,15 @@ func NewService(
 	minioClient *minio.Client,
 	gotenbergClient *gotenberg.Client,
 ) service.DocumentService {
-	gotenbergEnabled := gotenbergClient != nil
 
 	return &documentService{
-		documentRepo:     documentRepo,
-		documentTagRepo:  documentTagRepo,
-		tagRepo:          tagRepo,
-		folderRepo:       folderRepo,
-		minioClient:      minioClient,
-		bucketName:       "documents",
-		gotenbergClient:  gotenbergClient,
-		gotenbergEnabled: gotenbergEnabled,
+		documentRepo:    documentRepo,
+		documentTagRepo: documentTagRepo,
+		tagRepo:         tagRepo,
+		folderRepo:      folderRepo,
+		minioClient:     minioClient,
+		bucketName:      "documents",
+		gotenbergClient: gotenbergClient,
 	}
 }
 
@@ -196,7 +193,7 @@ func (s *documentService) Upload(ctx context.Context, input service.DocumentUplo
 	}
 
 	// Генерация preview для поддерживаемых типов файлов
-	if s.gotenbergEnabled && s.isConvertibleToPDF(input.MimeType) {
+	if s.isConvertibleToPDF(input.MimeType) {
 		// Запускаем генерацию preview асинхронно, чтобы не блокировать загрузку
 		go func() {
 			// Создаем новый контекст с таймаутом для фоновой задачи
@@ -471,9 +468,9 @@ func (s *documentService) hasAllTags(docTags []*ent.Tag, tagIDs []uuid.UUID) boo
 // После успешной конвертации обновляет ссылку на preview в базе данных
 func (s *documentService) GeneratePDFPreview(ctx context.Context, documentID uuid.UUID) error {
 	// Проверяем что Gotenberg доступен
-	if !s.gotenbergEnabled || s.gotenbergClient == nil {
-		return fmt.Errorf("gotenberg is not enabled or configured")
-	}
+	//if !s.gotenbergEnabled || s.gotenbergClient == nil {
+	//	return fmt.Errorf("gotenberg is not enabled or configured")
+	//}
 
 	// Получаем документ из БД
 	document, err := s.documentRepo.GetByID(ctx, documentID)
