@@ -8,11 +8,19 @@ export const companyApi = {
     return response.data;
   },
 
+  // Create new company
+  createCompany: async (name: string): Promise<Company> => {
+    const response = await apiClient.post<Company>('/private/companies', { name });
+    return response.data;
+  },
+
   // Get company users (with JOIN on users table)
   getCompanyUsers: async (companyId: string): Promise<{ users: CompanyUserWithDetails[]; total: number }> => {
     const response = await apiClient.get(`/private/companies/${companyId}/users`);
     return response.data;
   },
+
+  // ...existing code...
 
   // Update user role
   updateUserRole: async (companyUserId: string, role: number): Promise<void> => {

@@ -10,6 +10,7 @@ interface AuthContextType {
   companies: Company[];
   currentCompany: Company | null;
   setCurrentCompany: (company: Company) => void;
+  reloadCompanies: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
@@ -48,10 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .map(cu => cu.company!); // Извлекаем объект Company
 
       setCompanies(userCompanies);
-      if (!currentCompany && userCompanies.length > 0) {
-        setCurrentCompany(userCompanies[0]);
-        localStorage.setItem('currentCompany', JSON.stringify(userCompanies[0]));
-      }
+      // Не устанавливаем компанию автоматически - пользователь должен выбрать сам
     } catch (error) {
       console.error('Failed to load companies:', error);
     }
@@ -98,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         companies,
         currentCompany,
         setCurrentCompany: handleSetCurrentCompany,
+        reloadCompanies: loadCompanies,
         login,
         register,
         logout,

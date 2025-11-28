@@ -3,19 +3,22 @@
 import { useState, useEffect } from 'react';
 import { Document, Tag } from '@/lib/api/types';
 import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { tagsApi } from '@/lib/api/tags';
+import { documentsApi } from '@/lib/api/documents';
 import { useAuth } from '@/contexts/AuthContext';
+import { TrashIcon } from '@/components/icons';
 
 interface FileInfoProps {
   document: Document | null;
   onUpdate: () => void;
+  onDelete?: () => void;
 }
 
-export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate }) => {
+export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete }) => {
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { currentCompany } = useAuth();
 
   useEffect(() => {
@@ -51,6 +54,26 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate }) => {
       onUpdate();
     } catch (error) {
       console.error('Failed to remove tag:', error);
+    }
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!document) return;
+
+    const confirmed = confirm(`Вы уверены, что хотите удалить файл "${document.name}"? Это действие нельзя отменить.`);
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await documentsApi.delete(document.id);
+      if (onDelete) {
+        onDelete();
+      }
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      alert('Не удалось удалить файл');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -134,17 +157,30 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate }) => {
       {document.download_url && (
         <>
           <Divider />
-          <Button
-            as="a"
-            href={document.download_url}
-            download
-            color="primary"
-            className="w-full"
-          >
-            Скачать файл
-          </Button>
+          <div className="space-y-2">
+            <Button
+              as="a"
+              href={document.download_url}
+              download
+              color="primary"
+              className="w-full"
+            >
+              Скачать файл
+            </Button>
+            <Button
+              color="danger"
+              variant="flat"
+              className="w-full"
+              startContent={<TrashIcon />}
+              onPress={handleDeleteDocument}
+              isLoading={isDeleting}
+            >
+              Удалить файл
+            </Button>
+          </div>
         </>
       )}
     </div>
   );
 };
+

@@ -3,6 +3,7 @@ package http
 import (
 	"techmind/internal/service"
 	"techmind/internal/transport/http/handlers/auth"
+	"techmind/internal/transport/http/handlers/company"
 	"techmind/internal/transport/http/handlers/company_user"
 	"techmind/internal/transport/http/handlers/document"
 	"techmind/internal/transport/http/handlers/documenttag"
@@ -19,6 +20,7 @@ type ServerDeps struct {
 	DocumentService    service.DocumentService
 	DocumentTagService service.DocumentTagService
 	CompanyUserService service.CompanyUserService
+	CompanyService     service.CompanyService
 	Config             *config.Config
 }
 
@@ -29,7 +31,10 @@ type Server struct {
 
 func NewServer(deps ServerDeps) *Server {
 	server := &Server{
-		app:  fiber.New(),
+		app: fiber.New(fiber.Config{
+			// Увеличиваем лимит размера тела запроса до 5 ГБ для загрузки файлов
+			BodyLimit: 5 * 1024 * 1024 * 1024, // 5GB
+		}),
 		deps: deps,
 	}
 	server.setupMiddleware()
@@ -72,7 +77,7 @@ func (s *Server) setupRoutes() {
 
 	// Регистрация маршрутов для компаний
 	companiesGroup := private.Group("/companies")
-	// companiesGroup.Use(s.companyMiddleware)
+	company.RegisterRoutes(companiesGroup, s.deps.CompanyService)
 	company_user.RegisterRoutes(companiesGroup, s.deps.CompanyUserService)
 }
 

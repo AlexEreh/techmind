@@ -14,8 +14,12 @@ export default function UsersPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
+      return;
     }
-  }, [user, authLoading, router]);
+    if (!authLoading && user && !currentCompany) {
+      router.push('/select-company');
+    }
+  }, [user, currentCompany, authLoading, router]);
 
   if (authLoading || !user || !currentCompany) {
     return (

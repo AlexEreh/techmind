@@ -3,6 +3,7 @@ package di
 import (
 	"context"
 	"fmt"
+
 	"techmind/internal/service"
 	"techmind/internal/transport/http"
 	"techmind/pkg/config"
@@ -18,6 +19,7 @@ var Transport = fx.Options(
 			documentService service.DocumentService,
 			documentTagService service.DocumentTagService,
 			companyUserService service.CompanyUserService,
+			companyService service.CompanyService,
 			cfg *config.Config,
 		) *http.Server {
 			deps := http.ServerDeps{
@@ -26,6 +28,7 @@ var Transport = fx.Options(
 				DocumentService:    documentService,
 				DocumentTagService: documentTagService,
 				CompanyUserService: companyUserService,
+				CompanyService:     companyService,
 				Config:             cfg,
 			}
 			return http.NewServer(deps)

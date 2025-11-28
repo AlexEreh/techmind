@@ -150,3 +150,9 @@ type CompanyUserService interface {
 	// GetUserCompanies получает список всех компаний пользователя с информацией о ролях
 	GetUserCompanies(ctx context.Context, userID uuid.UUID) ([]*ent.CompanyUser, error)
 }
+
+// CompanyService определяет интерфейс для работы с компаниями
+type CompanyService interface {
+	// Create создает новую компанию и добавляет создателя как администратора
+	Create(ctx context.Context, name string, userID uuid.UUID) (*ent.Company, error)
+}
