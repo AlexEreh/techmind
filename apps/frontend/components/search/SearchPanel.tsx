@@ -43,12 +43,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
   const loadFilters = async () => {
     if (!currentCompany) return;
     try {
-      const [tagsData, sendersData] = await Promise.all([
+      const [tagsData, /*sendersData*/] = await Promise.all([
         tagsApi.getByCompany(currentCompany.id),
-        sendersApi.getByCompany(currentCompany.id),
+        //sendersApi.getByCompany(currentCompany.id),
       ]);
       setAllTags(tagsData.tags);
-      setAllSenders(sendersData.senders);
+      //setAllSenders(sendersData.senders);
     } catch (error) {
       console.error('Failed to load filters:', error);
     }
@@ -84,7 +84,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
           {allTags.map((tag) => (
             <Chip
               key={tag.id}
-              onPress={() => toggleTag(tag.id)}
+              //onPress={() => toggleTag(tag.id)}
               variant={selectedTags.includes(tag.id) ? 'solid' : 'bordered'}
               color={selectedTags.includes(tag.id) ? 'primary' : 'default'}
               className="cursor-pointer"
