@@ -44,8 +44,8 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
     if (!currentCompany) return;
     try {
       const [tagsData, sendersData] = await Promise.all([
-        tagsApi.getAll(currentCompany.id),
-        sendersApi.getAll(currentCompany.id),
+        tagsApi.getByCompany(currentCompany.id),
+        sendersApi.getByCompany(currentCompany.id),
       ]);
       setAllTags(tagsData.tags);
       setAllSenders(sendersData.senders);

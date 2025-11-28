@@ -24,7 +24,7 @@ export const TagsManagement: React.FC = () => {
   const loadTags = async () => {
     if (!currentCompany) return;
     try {
-      const { tags: loadedTags } = await tagsApi.getAll(currentCompany.id);
+      const { tags: loadedTags } = await tagsApi.getByCompany(currentCompany.id);
       setTags(loadedTags);
     } catch (error) {
       console.error('Failed to load tags:', error);

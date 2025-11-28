@@ -27,7 +27,7 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate }) => {
   const loadTags = async () => {
     if (!currentCompany) return;
     try {
-      const { tags } = await tagsApi.getAll(currentCompany.id);
+      const { tags } = await tagsApi.getByCompany(currentCompany.id);
       setAllTags(tags);
     } catch (error) {
       console.error('Failed to load tags:', error);

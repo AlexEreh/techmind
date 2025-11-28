@@ -15,7 +15,7 @@ CREATE TABLE users
 );
 
 -- ===========================
--- company
+-- companies
 -- ===========================
 CREATE TABLE companies
 (
@@ -34,7 +34,7 @@ CREATE TABLE company_users
     role         INT  NOT NULL,
 
     CONSTRAINT fk_company_users_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_company_users_company FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE
+    CONSTRAINT fk_company_users_company FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_company_users_user_id ON company_users (user_id);
@@ -52,7 +52,7 @@ CREATE TABLE folders
     size             BIGINT NOT NULL  DEFAULT 0, -- размер всех документов в байтах
     count            INT    NOT NULL  DEFAULT 0, -- количество документов
 
-    CONSTRAINT fk_folders_company FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE,
+    CONSTRAINT fk_folders_company FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
     CONSTRAINT fk_folders_parent FOREIGN KEY (parent_folder_id) REFERENCES folders (id) ON DELETE SET NULL
 );
 
@@ -86,7 +86,7 @@ CREATE TABLE documents
     sender_id  UUID               DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_documents_company FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE,
+    CONSTRAINT fk_documents_company FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
     CONSTRAINT fk_documents_folder FOREIGN KEY (folder_id) REFERENCES folders (id) ON DELETE SET NULL,
     CONSTRAINT fk_documents_sender FOREIGN KEY (sender_id) REFERENCES sender (id) ON DELETE SET NULL
 );
@@ -104,7 +104,7 @@ CREATE TABLE tags
     company_id UUID NOT NULL,
     name       TEXT NOT NULL,
 
-    CONSTRAINT fk_tags_company FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE,
+    CONSTRAINT fk_tags_company FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
     CONSTRAINT uq_tags_company_name UNIQUE (company_id, name)
 );
 
