@@ -186,6 +186,12 @@ func (s *documentService) Upload(ctx context.Context, input service.DocumentUplo
 	if err != nil {
 		// Удаляем файл из MinIO если не удалось создать запись в БД
 		_ = s.minioClient.RemoveObject(ctx, s.bucketName, objectName, minio.RemoveObjectOptions{})
+
+		// Проверяем на конфликт уникальности checksum
+		if ent.IsConstraintError(err) {
+			return nil, fmt.Errorf("document with this checksum already exists")
+		}
+
 		return nil, fmt.Errorf("failed to create document record: %w", err)
 	}
 
