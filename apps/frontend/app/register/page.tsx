@@ -31,7 +31,7 @@ export default function RegisterPage() {
             console.log('Starting registration...', {email, name});
             await register(email, password, name);
             console.log('Registration successful');
-            router.push('/files');
+            router.push('/select-company');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Ошибка регистрации. Попробуйте снова.');
         } finally {

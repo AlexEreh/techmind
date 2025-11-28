@@ -8,15 +8,88 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+	"time"
+
 	"techmind/internal/repo"
 	"techmind/internal/service"
 	"techmind/pkg/gotenberg"
 	"techmind/schema/ent"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 )
+
+const (
+	// MaxFileSize - максимальный размер файла 5 ГБ
+	MaxFileSize = 5 * 1024 * 1024 * 1024 // 5GB в байтах
+)
+
+// AllowedMimeTypes - список разрешенных MIME типов
+var AllowedMimeTypes = map[string]bool{
+	// Документы
+	"application/pdf":    true,
+	"application/msword": true, // .doc
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true, // .docx
+	"application/vnd.ms-excel": true, // .xls
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         true, // .xlsx
+	"application/vnd.ms-powerpoint":                                             true, // .ppt
+	"application/vnd.openxmlformats-officedocument.presentationml.presentation": true, // .pptx
+	"text/plain":      true, // .txt
+	"text/csv":        true, // .csv
+	"application/rtf": true, // .rtf
+
+	// Изображения
+	"image/jpeg":    true, // .jpg, .jpeg
+	"image/png":     true, // .png
+	"image/gif":     true, // .gif
+	"image/webp":    true, // .webp
+	"image/svg+xml": true, // .svg
+	"image/bmp":     true, // .bmp
+	"image/tiff":    true, // .tiff
+
+	// Видео (потенциально)
+	"video/mp4":        true, // .mp4
+	"video/mpeg":       true, // .mpeg
+	"video/quicktime":  true, // .mov
+	"video/x-msvideo":  true, // .avi
+	"video/x-matroska": true, // .mkv
+	"video/webm":       true, // .webm
+}
+
+// AllowedExtensions - список разрешенных расширений файлов
+var AllowedExtensions = map[string]bool{
+	// Документы
+	".pdf":  true,
+	".doc":  true,
+	".docx": true,
+	".xls":  true,
+	".xlsx": true,
+	".ppt":  true,
+	".pptx": true,
+	".txt":  true,
+	".csv":  true,
+	".rtf":  true,
+
+	// Изображения
+	".jpg":  true,
+	".jpeg": true,
+	".png":  true,
+	".gif":  true,
+	".webp": true,
+	".svg":  true,
+	".bmp":  true,
+	".tiff": true,
+	".tif":  true,
+
+	// Видео
+	".mp4":  true,
+	".mpeg": true,
+	".mpg":  true,
+	".mov":  true,
+	".avi":  true,
+	".mkv":  true,
+	".webm": true,
+}
 
 type documentService struct {
 	documentRepo     repo.DocumentRepository
@@ -52,6 +125,22 @@ func NewService(
 }
 
 func (s *documentService) Upload(ctx context.Context, input service.DocumentUploadInput) (*ent.Document, error) {
+	// Проверяем размер файла
+	if input.FileSize > MaxFileSize {
+		return nil, fmt.Errorf("file size exceeds maximum allowed size of 5GB")
+	}
+
+	// Проверяем расширение файла
+	ext := strings.ToLower(filepath.Ext(input.Name))
+	if !AllowedExtensions[ext] {
+		return nil, fmt.Errorf("file type not supported: %s", ext)
+	}
+
+	// Проверяем MIME тип
+	if !AllowedMimeTypes[input.MimeType] {
+		return nil, fmt.Errorf("file type not supported: %s", input.MimeType)
+	}
+
 	// Проверяем что папка существует и принадлежит компании
 	if input.FolderID != nil {
 		folder, err := s.folderRepo.GetByID(ctx, *input.FolderID)
@@ -65,8 +154,9 @@ func (s *documentService) Upload(ctx context.Context, input service.DocumentUplo
 
 	// Генерируем уникальное имя файла
 	fileID := uuid.New()
-	ext := filepath.Ext(input.Name)
 	objectName := fmt.Sprintf("%s/%s%s", input.CompanyID.String(), fileID.String(), ext)
+
+	// ...existing code...
 
 	// Вычисляем checksum
 	hash := sha256.New()

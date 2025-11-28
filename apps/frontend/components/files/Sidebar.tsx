@@ -3,6 +3,7 @@
 import { Button } from '@heroui/button';
 import { Tooltip } from '@heroui/tooltip';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   FileIcon,
   SearchIcon,
@@ -10,6 +11,7 @@ import {
   TagIcon,
   UsersIcon,
   UserIcon,
+  FolderIcon,
 } from '@/components/icons';
 
 interface SidebarProps {
@@ -19,6 +21,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) => {
   const router = useRouter();
+  const { currentCompany } = useAuth();
 
   return (
     <div className="w-16 bg-content1 border-r border-divider flex flex-col items-center py-4 gap-4">
@@ -67,6 +70,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
       </Tooltip>
 
       <div className="flex-1" />
+
+      {currentCompany && (
+        <Tooltip
+          content={`Компания: ${currentCompany.name}\nНажмите для смены`}
+          placement="right"
+        >
+          <Button
+            isIconOnly
+            variant="light"
+            onPress={() => router.push('/select-company')}
+          >
+            <FolderIcon className="w-5 h-5" />
+          </Button>
+        </Tooltip>
+      )}
 
       <Tooltip content="Профиль" placement="right">
         <Button

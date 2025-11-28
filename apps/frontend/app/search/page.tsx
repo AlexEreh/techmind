@@ -22,8 +22,12 @@ export default function SearchPage() {
     useEffect(() => {
         if (!authLoading && !user) {
             router.push('/login');
+            return;
         }
-    }, [user, authLoading, router]);
+        if (!authLoading && user && !currentCompany) {
+            router.push('/select-company');
+        }
+    }, [user, currentCompany, authLoading, router]);
 
     const handleSearch = async (query: string, tagIds: string[], senderId?: string) => {
         if (!currentCompany) return;
@@ -72,6 +76,14 @@ export default function SearchPage() {
         }
     };
 
+    const handleDocumentDelete = () => {
+        if (selectedDocument) {
+            // Удаляем документ из результатов поиска
+            setSearchResults(prev => prev.filter(doc => doc.id !== selectedDocument.id));
+            setSelectedDocument(null);
+        }
+    };
+
     if (authLoading || !user || !currentCompany) {
         return (
             <div className="flex items-center justify-center h-screen">
@@ -99,7 +111,11 @@ export default function SearchPage() {
             </div>
 
             <div className="w-80 overflow-y-auto">
-                <FileInfo document={selectedDocument} onUpdate={() => {}} />
+                <FileInfo
+                    document={selectedDocument}
+                    onUpdate={handleDocumentUpdate}
+                    onDelete={handleDocumentDelete}
+                />
             </div>
         </div>
     );

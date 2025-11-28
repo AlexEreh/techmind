@@ -1,6 +1,8 @@
 package document
 
 import (
+	"strings"
+
 	"techmind/internal/service"
 	"techmind/internal/transport/http/handlers"
 
@@ -68,6 +70,11 @@ func (h *UploadHandler) Handle(c fiber.Ctx) error {
 
 	document, err := h.documentService.Upload(c.Context(), input)
 	if err != nil {
+		if strings.Contains(err.Error(), "not supported") {
+			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(handlers.ErrorResponse{
+				Error: err.Error(),
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(handlers.ErrorResponse{
 			Error: err.Error(),
 		})

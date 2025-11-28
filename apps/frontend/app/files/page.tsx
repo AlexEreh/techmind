@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import { Sidebar } from '@/components/files/Sidebar';
-import { FolderTree } from '@/components/files/FolderTree';
-import { FilePreview } from '@/components/files/FilePreview';
-import { FileInfo } from '@/components/files/FileInfo';
-import { foldersApi } from '@/lib/api/folders';
-import { documentsApi } from '@/lib/api/documents';
-import { Document, Folder } from '@/lib/api/types';
-import { Spinner } from '@heroui/spinner';
+import {useState, useEffect, useRef} from 'react';
+import {useAuth} from '@/contexts/AuthContext';
+import {useRouter} from 'next/navigation';
+import {Sidebar} from '@/components/files/Sidebar';
+import {FolderTree} from '@/components/files/FolderTree';
+import {FilePreview} from '@/components/files/FilePreview';
+import {FileInfo} from '@/components/files/FileInfo';
+import {foldersApi} from '@/lib/api/folders';
+import {documentsApi} from '@/lib/api/documents';
+import {Document, Folder} from '@/lib/api/types';
+import {Spinner} from '@heroui/spinner';
 
 export default function FilesPage() {
-    const { user, currentCompany, isLoading: authLoading } = useAuth();
+    const {user, currentCompany, isLoading: authLoading} = useAuth();
     const router = useRouter();
     const [folders, setFolders] = useState<Folder[]>([]);
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -27,8 +27,12 @@ export default function FilesPage() {
     useEffect(() => {
         if (!authLoading && !user) {
             router.push('/login');
+            return;
         }
-    }, [user, authLoading, router]);
+        if (!authLoading && user && !currentCompany) {
+            router.push('/select-company');
+        }
+    }, [user, currentCompany, authLoading, router]);
 
     useEffect(() => {
         if (currentCompany) {
@@ -102,21 +106,62 @@ export default function FilesPage() {
         }
     };
 
+    const handleDocumentDelete = () => {
+        // После удаления сбрасываем выбранный документ и обновляем список
+        setSelectedDocument(null);
+        handleFolderSelect(selectedFolderId);
+    };
+
     const handleFilesUpload = async (files: FileList) => {
         if (!currentCompany) return;
-        try {
-            for (const file of Array.from(files)) {
+
+        const fileArray = Array.from(files);
+        const errors: string[] = [];
+        let successCount = 0;
+
+        for (const file of fileArray) {
+            try {
                 await documentsApi.upload({
                     company_id: currentCompany.id,
                     name: file.name,
                     file,
                     folder_id: selectedFolderId || undefined,
                 });
+                successCount++;
+            } catch (e: any) {
+                const statusCode = e.response?.status;
+                const errorMessage = e.response?.data?.error || e.message || 'Неизвестная ошибка';
+
+                // Обрабатываем специфичные ошибки
+                if (statusCode === 413) {
+                    // 413 Request Entity Too Large - файл слишком большой
+                    errors.push(`${file.name}: Размер файла превышает максимально допустимый (5 ГБ)`);
+                } else if (errorMessage.includes('file size exceeds maximum')) {
+                    errors.push(`${file.name}: Размер файла превышает максимально допустимый (5 ГБ)`);
+                } else if (errorMessage.includes('file type not supported')) {
+                    errors.push(`${file.name}: Неподдерживаемый формат файла`);
+                } else {
+                    errors.push(`${file.name}: ${errorMessage}`);
+                }
             }
-            // После загрузки обновить содержимое текущей папки
+        }
+
+        // Показываем результат
+        if (errors.length > 0) {
+            const message = successCount > 0
+                ? `Загружено: ${successCount} из ${fileArray.length}\n\nОшибки:\n${errors.join('\n')}`
+                : `Ошибки загрузки:\n${errors.join('\n')}`;
+            alert(message);
+        } else if (successCount > 0) {
+            // Показываем успех только если загружено несколько файлов
+            if (fileArray.length > 1) {
+                alert(`Успешно загружено файлов: ${successCount}`);
+            }
+        }
+
+        // После загрузки обновить содержимое текущей папки
+        if (successCount > 0) {
             handleFolderSelect(selectedFolderId);
-        } catch (e) {
-            alert('Ошибка загрузки файлов');
         }
     };
 
@@ -165,7 +210,7 @@ export default function FilesPage() {
     if (authLoading || !user || !currentCompany) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <Spinner size="lg" />
+                <Spinner size="lg"/>
             </div>
         );
     }
@@ -189,7 +234,8 @@ export default function FilesPage() {
 
             {/* Drag & Drop overlay */}
             {isDragging && (
-                <div className="absolute inset-0 z-50 bg-primary/10 border-4 border-dashed border-primary flex items-center justify-center">
+                <div
+                    className="absolute inset-0 z-50 bg-primary/10 border-4 border-dashed border-primary flex items-center justify-center">
                     <div className="text-center">
                         <p className="text-2xl font-bold text-primary">Перетащите файлы сюда</p>
                         <p className="text-default-500">
@@ -203,12 +249,12 @@ export default function FilesPage() {
             )}
 
             {/* Left Sidebar - Commands */}
-            <Sidebar currentView="files" onUploadClick={handleUploadClick} />
+            <Sidebar currentView="files" onUploadClick={handleUploadClick}/>
 
             {/* Folder Tree with Documents */}
             <div
                 className="border-r border-divider overflow-hidden relative"
-                style={{ width: `${treeWidth}px` }}
+                style={{width: `${treeWidth}px`}}
             >
                 <FolderTree
                     folders={folders}
@@ -242,12 +288,16 @@ export default function FilesPage() {
 
             {/* File Preview - Center */}
             <div className="flex-1 border-r border-divider overflow-hidden">
-                <FilePreview document={selectedDocument} />
+                <FilePreview document={selectedDocument}/>
             </div>
 
             {/* File Info */}
             <div className="w-80 overflow-y-auto">
-                <FileInfo document={selectedDocument} onUpdate={handleDocumentUpdate} />
+                <FileInfo
+                    document={selectedDocument}
+                    onUpdate={handleDocumentUpdate}
+                    onDelete={handleDocumentDelete}
+                />
             </div>
         </div>
     );

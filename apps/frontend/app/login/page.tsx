@@ -23,7 +23,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/files');
+      router.push('/select-company');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Ошибка входа. Проверьте email и пароль.');
     } finally {
