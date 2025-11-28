@@ -6,7 +6,7 @@ import { Input } from '@heroui/input';
 import { Select, SelectItem } from '@heroui/select';
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/modal';
-import { CompanyUser } from '@/lib/api/types';
+import { CompanyUserWithDetails } from '@/lib/api/types';
 import { companyApi } from '@/lib/api/company';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlusIcon, TrashIcon } from '@/components/icons';
@@ -18,7 +18,7 @@ const ROLES = [
 ];
 
 export const UsersManagement: React.FC = () => {
-  const [users, setUsers] = useState<CompanyUser[]>([]);
+  const [users, setUsers] = useState<CompanyUserWithDetails[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('1');
   const [isInviting, setIsInviting] = useState(false);
@@ -58,7 +58,7 @@ export const UsersManagement: React.FC = () => {
   const handleUpdateRole = async (userId: string, newRole: number) => {
     if (!currentCompany) return;
     try {
-      await companyApi.updateUserRole(currentCompany.id, userId, newRole);
+      await companyApi.updateUserRole(userId, newRole);
       await loadUsers();
     } catch (error) {
       console.error('Failed to update role:', error);
@@ -69,7 +69,7 @@ export const UsersManagement: React.FC = () => {
     if (!currentCompany || !confirm('Удалить пользователя из компании?')) return;
 
     try {
-      await companyApi.removeUser(currentCompany.id, userId);
+      await companyApi.removeUser(userId);
       await loadUsers();
     } catch (error) {
       console.error('Failed to remove user:', error);
@@ -98,18 +98,18 @@ export const UsersManagement: React.FC = () => {
         </TableHeader>
         <TableBody emptyContent="Нет пользователей">
           {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.user?.email || '-'}</TableCell>
-              <TableCell>{user.user?.name || '-'}</TableCell>
+            <TableRow key={user.company_user_id}>
+              <TableCell>{user.email || '-'}</TableCell>
+              <TableCell>{user.name || '-'}</TableCell>
               <TableCell>
                 <Select
                   size="sm"
                   selectedKeys={[user.role.toString()]}
-                  onChange={(e) => handleUpdateRole(user.user_id, parseInt(e.target.value))}
+                  onChange={(e) => handleUpdateRole(user.company_user_id, parseInt(e.target.value))}
                   className="w-40"
                 >
                   {ROLES.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
+                    <SelectItem key={role.value}>
                       {role.label}
                     </SelectItem>
                   ))}
@@ -121,7 +121,7 @@ export const UsersManagement: React.FC = () => {
                   size="sm"
                   color="danger"
                   variant="light"
-                  onPress={() => handleRemoveUser(user.user_id)}
+                  onPress={() => handleRemoveUser(user.company_user_id)}
                 >
                   <TrashIcon />
                 </Button>
@@ -149,7 +149,7 @@ export const UsersManagement: React.FC = () => {
               onChange={(e) => setInviteRole(e.target.value)}
             >
               {ROLES.map((role) => (
-                <SelectItem key={role.value} value={role.value}>
+                <SelectItem key={role.value}>
                   {role.label}
                 </SelectItem>
               ))}

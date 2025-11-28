@@ -57,6 +57,21 @@ export default function SearchPage() {
         }
     };
 
+    const handleDocumentUpdate = async () => {
+        if (selectedDocument) {
+            try {
+                const updatedDoc = await documentsApi.getById(selectedDocument.id);
+                setSelectedDocument(updatedDoc);
+                // Обновляем документ в результатах поиска
+                setSearchResults(prev =>
+                    prev.map(doc => doc.id === updatedDoc.id ? updatedDoc : doc)
+                );
+            } catch (error) {
+                console.error('Failed to update document:', error);
+            }
+        }
+    };
+
     if (authLoading || !user || !currentCompany) {
         return (
             <div className="flex items-center justify-center h-screen">

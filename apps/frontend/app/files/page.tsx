@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/files/Sidebar';
@@ -11,7 +11,6 @@ import { foldersApi } from '@/lib/api/folders';
 import { documentsApi } from '@/lib/api/documents';
 import { Document, Folder } from '@/lib/api/types';
 import { Spinner } from '@heroui/spinner';
-import { Dropzone } from '@/components/files/Dropzone';
 
 export default function FilesPage() {
     const { user, currentCompany, isLoading: authLoading } = useAuth();
@@ -22,7 +21,8 @@ export default function FilesPage() {
     const [folderDocuments, setFolderDocuments] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [treeWidth, setTreeWidth] = useState(300);
-    const [previewWidth, setPreviewWidth] = useState(600);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -114,11 +114,51 @@ export default function FilesPage() {
                 });
             }
             // После загрузки обновить содержимое текущей папки
-            if (selectedFolderId) {
-                handleFolderSelect(selectedFolderId);
-            }
+            handleFolderSelect(selectedFolderId);
         } catch (e) {
             alert('Ошибка загрузки файлов');
+        }
+    };
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleFilesUpload(e.target.files);
+            e.target.value = ''; // Сбрасываем input для повторной загрузки
+        }
+    };
+
+    // Drag & Drop handlers
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.currentTarget === e.target) {
+            setIsDragging(false);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            handleFilesUpload(files);
         }
     };
 
@@ -131,98 +171,83 @@ export default function FilesPage() {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-background">
-            <div className="p-4">
-                <Dropzone onFilesAdded={handleFilesUpload} />
-            </div>
-            <div className="flex flex-1 min-h-0">
-                {/* Left Sidebar - Commands */}
-                <Sidebar currentView="files" />
-                {/* Folder Tree */}
-                <div
-                    className="border-r border-divider overflow-y-auto"
-                    style={{ width: `${treeWidth}px` }}
-                >
-                    <FolderTree
-                        folders={folders}
-                        onFolderSelect={handleFolderSelect}
-                        selectedFolderId={selectedFolderId}
-                        isLoading={isLoading}
-                        showRoot
-                    />
-                    <div
-                        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary"
-                        onMouseDown={(e) => {
-                            const startX = e.clientX;
-                            const startWidth = treeWidth;
-                            const handleMouseMove = (e: MouseEvent) => {
-                                const newWidth = startWidth + (e.clientX - startX);
-                                setTreeWidth(Math.max(200, Math.min(600, newWidth)));
-                            };
-                            const handleMouseUp = () => {
-                                document.removeEventListener('mousemove', handleMouseMove);
-                                document.removeEventListener('mouseup', handleMouseUp);
-                            };
-                            document.addEventListener('mousemove', handleMouseMove);
-                            document.addEventListener('mouseup', handleMouseUp);
-                        }}
-                    />
-                </div>
-                {/* File Preview + список файлов выбранной папки */}
-                <div
-                    className="flex-1 border-r border-divider overflow-y-auto"
-                    style={{ width: `${previewWidth}px` }}
-                >
-                    {/* Список файлов выбранной папки */}
-                    <div className="p-4">
-                        {selectedFolderId === null && folderDocuments.length > 0 && (
-                            <ul>
-                                {folderDocuments.map(doc => (
-                                    <li key={doc.id} className="cursor-pointer hover:underline" onClick={() => handleDocumentSelect(doc)}>
-                                        {doc.name}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                        {selectedFolderId === null && folderDocuments.length === 0 && !isLoading && (
-                            <div className="text-gray-400">В корне нет файлов</div>
-                        )}
-                        {selectedFolderId && folderDocuments.length > 0 && (
-                            <ul>
-                                {folderDocuments.map(doc => (
-                                    <li key={doc.id} className="cursor-pointer hover:underline" onClick={() => handleDocumentSelect(doc)}>
-                                        {doc.name}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                        {selectedFolderId && folderDocuments.length === 0 && !isLoading && (
-                            <div className="text-gray-400">В папке нет файлов</div>
-                        )}
+        <div
+            className="flex h-screen bg-background relative"
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileInputChange}
+            />
+
+            {/* Drag & Drop overlay */}
+            {isDragging && (
+                <div className="absolute inset-0 z-50 bg-primary/10 border-4 border-dashed border-primary flex items-center justify-center">
+                    <div className="text-center">
+                        <p className="text-2xl font-bold text-primary">Перетащите файлы сюда</p>
+                        <p className="text-default-500">
+                            {selectedFolderId
+                                ? `Загрузка в: ${folders.find(f => f.id === selectedFolderId)?.name || 'выбранную папку'}`
+                                : 'Загрузка в корень'
+                            }
+                        </p>
                     </div>
-                    <FilePreview document={selectedDocument} />
-                    <div
-                        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary"
-                        onMouseDown={(e) => {
-                            const startX = e.clientX;
-                            const startWidth = previewWidth;
-                            const handleMouseMove = (e: MouseEvent) => {
-                                const newWidth = startWidth + (e.clientX - startX);
-                                setPreviewWidth(Math.max(400, Math.min(1000, newWidth)));
-                            };
-                            const handleMouseUp = () => {
-                                document.removeEventListener('mousemove', handleMouseMove);
-                                document.removeEventListener('mouseup', handleMouseUp);
-                            };
-                            document.addEventListener('mousemove', handleMouseMove);
-                            document.addEventListener('mouseup', handleMouseUp);
-                        }}
-                    />
                 </div>
-                {/* File Info */}
-                <div className="w-80 overflow-y-auto">
-                    <FileInfo document={selectedDocument} onUpdate={handleDocumentUpdate} />
-                </div>
+            )}
+
+            {/* Left Sidebar - Commands */}
+            <Sidebar currentView="files" onUploadClick={handleUploadClick} />
+
+            {/* Folder Tree with Documents */}
+            <div
+                className="border-r border-divider overflow-hidden relative"
+                style={{ width: `${treeWidth}px` }}
+            >
+                <FolderTree
+                    folders={folders}
+                    documents={folderDocuments}
+                    onFolderSelect={handleFolderSelect}
+                    onDocumentSelect={handleDocumentSelect}
+                    selectedFolderId={selectedFolderId}
+                    selectedDocumentId={selectedDocument?.id}
+                    isLoading={isLoading}
+                    showRoot
+                    onFolderCreated={loadFolderTree}
+                />
+                <div
+                    className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary z-10"
+                    onMouseDown={(e) => {
+                        const startX = e.clientX;
+                        const startWidth = treeWidth;
+                        const handleMouseMove = (e: MouseEvent) => {
+                            const newWidth = startWidth + (e.clientX - startX);
+                            setTreeWidth(Math.max(250, Math.min(600, newWidth)));
+                        };
+                        const handleMouseUp = () => {
+                            document.removeEventListener('mousemove', handleMouseMove);
+                            document.removeEventListener('mouseup', handleMouseUp);
+                        };
+                        document.addEventListener('mousemove', handleMouseMove);
+                        document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                />
+            </div>
+
+            {/* File Preview - Center */}
+            <div className="flex-1 border-r border-divider overflow-hidden">
+                <FilePreview document={selectedDocument} />
+            </div>
+
+            {/* File Info */}
+            <div className="w-80 overflow-y-auto">
+                <FileInfo document={selectedDocument} onUpdate={handleDocumentUpdate} />
             </div>
         </div>
     );

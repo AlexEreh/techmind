@@ -2,31 +2,45 @@
 
 import { useState } from 'react';
 import { Button } from '@heroui/button';
+import { Input } from '@heroui/input';
 import { Spinner } from '@heroui/spinner';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/dropdown';
-import { Folder } from '@/lib/api/types';
-import { ChevronDownIcon, ChevronRightIcon, FolderIcon, MoreVerticalIcon } from '@/components/icons';
+import { Divider } from '@heroui/divider';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/modal';
+import { Folder, Document } from '@/lib/api/types';
+import { ChevronDownIcon, ChevronRightIcon, FolderIcon, PlusIcon, FileIcon } from '@/components/icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { foldersApi } from '@/lib/api/folders';
 
 interface FolderTreeProps {
   folders: Folder[];
+  documents?: Document[];
   onFolderSelect: (folderId: string | null) => void;
+  onDocumentSelect?: (document: Document) => void;
   selectedFolderId: string | null;
+  selectedDocumentId?: string | null;
   isLoading: boolean;
   highlightedIds?: string[];
   showRoot?: boolean;
+  onFolderCreated?: () => void;
 }
 
 export const FolderTree: React.FC<FolderTreeProps> = ({
   folders,
+  documents = [],
   onFolderSelect,
+  onDocumentSelect,
   selectedFolderId,
+  selectedDocumentId,
   isLoading,
   highlightedIds = [],
   showRoot = false,
+  onFolderCreated,
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const { currentCompany } = useAuth();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => {
@@ -40,6 +54,29 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     });
   };
 
+  const handleCreateFolder = async () => {
+    if (!currentCompany || !newFolderName.trim()) return;
+
+    setIsCreating(true);
+    try {
+      await foldersApi.create({
+        company_id: currentCompany.id,
+        name: newFolderName.trim(),
+        parent_id: selectedFolderId || undefined,
+      });
+      setNewFolderName('');
+      onClose();
+      if (onFolderCreated) {
+        onFolderCreated();
+      }
+    } catch (error) {
+      console.error('Failed to create folder:', error);
+      alert('Не удалось создать папку');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const buildTree = (parentId?: string, level = 0): JSX.Element[] => {
     const childFolders = folders.filter((f) => f.parent_folder_id === parentId);
     const elements: JSX.Element[] = [];
@@ -51,7 +88,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         <div
           key={folder.id}
           style={{ paddingLeft: level * 16 }}
-          className={`flex items-center py-1 ${selectedFolderId === folder.id ? 'bg-blue-100' : ''}`}
+          className={`flex items-center py-1 hover:bg-default-100 cursor-pointer ${selectedFolderId === folder.id ? 'bg-primary/20' : ''}`}
         >
           <button
             className="flex items-center w-full text-left"
@@ -74,26 +111,112 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   };
 
   return (
-    <div className="relative">
-      {showRoot && (
-        <div className={`flex items-center py-1 hover:bg-default-100 ${selectedFolderId === null ? 'bg-primary/20' : ''}`}>
-          <button
-            className="flex items-center w-full text-left"
-            onClick={() => onFolderSelect(null)}
-          >
-            <span className="w-6" /> {/* Спейсер для выравнивания с папками с иконками шеврона */}
-            <FolderIcon className="ml-1 mr-2" />
-            <span className="font-bold">Корень</span>
-          </button>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto">
+        {/* Folder tree */}
+        <div className="mb-2">
+          {showRoot && (
+            <div className={`flex items-center py-1 px-2 hover:bg-default-100 cursor-pointer ${selectedFolderId === null ? 'bg-primary/20' : ''}`}>
+              <button
+                className="flex items-center w-full text-left"
+                onClick={() => onFolderSelect(null)}
+              >
+                <span className="w-6" />
+                <FolderIcon className="ml-1 mr-2" />
+                <span className="font-bold">Корень</span>
+              </button>
+            </div>
+          )}
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <Spinner size="sm" />
+            </div>
+          ) : (
+            <div className="px-2">{buildTree()}</div>
+          )}
         </div>
-      )}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-32">
-          <Spinner size="sm" />
+
+        <Divider className="my-2" />
+
+        {/* Documents list */}
+        <div className="px-2">
+          <p className="text-xs font-semibold text-default-500 uppercase mb-2 px-2">
+            Файлы {selectedFolderId ? 'в папке' : 'в корне'}
+          </p>
+          {documents.length > 0 ? (
+            <div className="space-y-1">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className={`flex items-center py-2 px-2 rounded cursor-pointer hover:bg-default-100 ${
+                    selectedDocumentId === doc.id ? 'bg-primary/20' : ''
+                  }`}
+                  onClick={() => onDocumentSelect?.(doc)}
+                >
+                  <FileIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="text-sm truncate">{doc.name}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-default-400 px-2">
+              {isLoading ? 'Загрузка...' : 'Нет файлов'}
+            </p>
+          )}
         </div>
-      ) : (
-        <div>{buildTree()}</div>
-      )}
+      </div>
+
+      <div className="p-2 border-t border-divider">
+        <Button
+          fullWidth
+          color="primary"
+          variant="flat"
+          startContent={<PlusIcon />}
+          onPress={onOpen}
+          size="sm"
+        >
+          Создать папку
+        </Button>
+      </div>
+
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalContent>
+          <ModalHeader>Создать новую папку</ModalHeader>
+          <ModalBody>
+            <Input
+              label="Имя папки"
+              placeholder="Введите имя папки"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newFolderName.trim()) {
+                  handleCreateFolder();
+                }
+              }}
+            />
+            <p className="text-sm text-default-500">
+              {selectedFolderId
+                ? `Папка будет создана в: ${folders.find(f => f.id === selectedFolderId)?.name || 'выбранной папке'}`
+                : 'Папка будет создана в корне'
+              }
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={onClose}>
+              Отмена
+            </Button>
+            <Button
+              color="primary"
+              onPress={handleCreateFolder}
+              isLoading={isCreating}
+              isDisabled={!newFolderName.trim()}
+            >
+              Создать
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 };
