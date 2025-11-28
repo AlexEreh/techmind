@@ -90,6 +90,18 @@ export default function FilesPage() {
         }
     };
 
+    const handleDocumentUpdate = async () => {
+        // Перезагружаем текущий документ после изменений (например, добавления/удаления тегов)
+        if (selectedDocument) {
+            try {
+                const updatedDoc = await documentsApi.getById(selectedDocument.id);
+                setSelectedDocument(updatedDoc);
+            } catch (error) {
+                console.error('Failed to reload document:', error);
+            }
+        }
+    };
+
     const handleFilesUpload = async (files: FileList) => {
         if (!currentCompany) return;
         try {
@@ -209,7 +221,7 @@ export default function FilesPage() {
                 </div>
                 {/* File Info */}
                 <div className="w-80 overflow-y-auto">
-                    <FileInfo document={selectedDocument} onUpdate={() => { if (selectedFolderId) handleFolderSelect(selectedFolderId); }} />
+                    <FileInfo document={selectedDocument} onUpdate={handleDocumentUpdate} />
                 </div>
             </div>
         </div>

@@ -84,7 +84,7 @@ export default function SearchPage() {
             </div>
 
             <div className="w-80 overflow-y-auto">
-                <FileInfo document={selectedDocument} onUpdate={() => {}} />
+                <FileInfo document={selectedDocument} onUpdate={handleDocumentUpdate} />
             </div>
         </div>
     );
