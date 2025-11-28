@@ -24,6 +24,10 @@ export default function ProfilePage() {
     router.push('/login');
   };
 
+  const handleGetApiKey = () => {
+      prompt(`Ваш API ключ:`, String(localStorage.getItem("token")));
+  }
+
   if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -86,11 +90,19 @@ export default function ProfilePage() {
             </CardHeader>
             <Divider />
             <CardBody>
+                <Button
+                    color="default"
+                    variant="flat"
+                    onPress={handleGetApiKey}
+                    className="w-full"
+                >
+                    Получить API ключ
+                </Button>
               <Button
                 color="danger"
                 variant="flat"
                 onPress={handleLogout}
-                className="w-full"
+                className="w-full mt-2"
               >
                 Выйти из аккаунта
               </Button>
