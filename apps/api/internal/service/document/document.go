@@ -189,7 +189,21 @@ func (s *documentService) Upload(ctx context.Context, input service.DocumentUplo
 		return nil, fmt.Errorf("failed to create document record: %w", err)
 	}
 
-	// TODO: Генерация preview для поддерживаемых типов файлов скорее всего в микросервисе (kafka - посредник, без grpc)
+	// Генерация preview для поддерживаемых типов файлов
+	if s.gotenbergEnabled && s.isConvertibleToPDF(input.MimeType) {
+		// Запускаем генерацию preview асинхронно, чтобы не блокировать загрузку
+		go func() {
+			// Создаем новый контекст с таймаутом для фоновой задачи
+			previewCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+
+			if err := s.GeneratePDFPreview(previewCtx, document.ID); err != nil {
+				// Логируем ошибку, но не прерываем процесс загрузки
+				// В продакшене здесь должно быть логирование через logger
+				fmt.Printf("Failed to generate preview for document %s: %v\n", document.ID, err)
+			}
+		}()
+	}
 
 	return document, nil
 }
