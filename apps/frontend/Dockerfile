@@ -1,23 +1,18 @@
 # Dockerfile for Next.js frontend
-FROM node:22.21.1-alpine AS base
+FROM node:22.21.1-alpine
 
-# Ensure pnpm is available in all stages by enabling corepack and preparing pnpm
+# Ensure pnpm is available
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Install dependencies only when needed
-FROM base AS deps
+# Install runtime compat and set workdir
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Install dependencies and build in a single stage
 COPY package.json package-lock.json* ./
-RUN pnpm install
+RUN pnpm install --frozen-lockfile --prefer-offline
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
 ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN pnpm run build
