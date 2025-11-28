@@ -52,6 +52,24 @@ func (s *Server) jwtMiddleware(c fiber.Ctx) error {
 	return c.Next()
 }
 
+func (s *Server) optsMiddleware(c fiber.Ctx) error {
+	err := c.Next()
+
+	if c.Method() == fiber.MethodOptions {
+		c.Set("Access-Control-Allow-Origin", "*")
+		c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+		c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		_ = c.SendStatus(fiber.StatusNoContent)
+		return nil
+	}
+
+	c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+	c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	return err
+}
+
 // GetUserIDFromContext извлекает user_id из контекста
 func GetUserIDFromContext(c fiber.Ctx) (uuid.UUID, error) {
 	userID := c.Locals(UserIDContextKey)

@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"techmind/internal/repo"
 	"techmind/internal/service"
 	"techmind/pkg/config"
 	"techmind/schema/ent"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -50,12 +51,6 @@ func (s *authService) Login(ctx context.Context, email, password string) (token 
 }
 
 func (s *authService) Register(ctx context.Context, name, email, password string) (token string, user *ent.User, err error) {
-	// Проверяем, существует ли пользователь с таким email
-	existingUser, err := s.userRepo.GetByEmail(ctx, email)
-	if err == nil && existingUser != nil {
-		return "", nil, errors.New("user with this email already exists")
-	}
-
 	// Хешируем пароль
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

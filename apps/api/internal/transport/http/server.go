@@ -47,6 +47,7 @@ func (s *Server) setupMiddleware() {
 func (s *Server) setupRoutes() {
 	// Публичные маршруты
 	public := s.app.Group("/api/v1/public")
+	public.Use(s.optsMiddleware)
 
 	// Регистрация маршрутов аутентификации
 	authGroup := public.Group("/auth")
@@ -54,6 +55,7 @@ func (s *Server) setupRoutes() {
 
 	// Приватные маршруты
 	private := s.app.Group("/api/v1/private")
+	private.Use(s.optsMiddleware)
 	private.Use(s.jwtMiddleware)
 
 	// Регистрация маршрутов для папок
@@ -70,7 +72,7 @@ func (s *Server) setupRoutes() {
 
 	// Регистрация маршрутов для компаний
 	companiesGroup := private.Group("/companies")
-	//companiesGroup.Use(s.companyMiddleware)
+	// companiesGroup.Use(s.companyMiddleware)
 	company_user.RegisterRoutes(companiesGroup, s.deps.CompanyUserService)
 }
 

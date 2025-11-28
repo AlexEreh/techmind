@@ -1,4 +1,4 @@
-# DataRush - File Manager Frontend
+# TechMind - File Manager Frontend
 
 Современный менеджер файлов для организаций, построенный на Next.js и HeroUI.
 

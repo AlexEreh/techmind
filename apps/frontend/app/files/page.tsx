@@ -39,9 +39,11 @@ export default function FilesPage() {
 
         setIsLoading(true);
         try {
-            const data = await foldersApi.getTree(currentCompany.id);
+            console.log("Loading folders for company:", currentCompany.id);
+            const data = await foldersApi.getAllCompanyFolders(currentCompany.id);
             setFolders(data.folders || []);
-            setDocuments(data.documents || []);
+            console.log("Loaded folders:", data.folders);
+            //setDocuments(data.documents || []);
         } catch (error) {
             console.error('Failed to load folders:', error);
         } finally {
