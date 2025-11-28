@@ -59,6 +59,8 @@ type CompanyUserRepository interface {
 	ListByCompany(ctx context.Context, companyID uuid.UUID) ([]*ent.CompanyUser, error)
 	// ListByUser retrieves all company users by user ID
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]*ent.CompanyUser, error)
+	// ListByUserWithCompany retrieves all company users by user ID with company details
+	ListByUserWithCompany(ctx context.Context, userID uuid.UUID) ([]*ent.CompanyUser, error)
 }
 
 // FolderRepository defines folder-related database operations

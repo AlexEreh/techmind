@@ -17,6 +17,7 @@ var Transport = fx.Options(
 			folderService service.FolderService,
 			documentService service.DocumentService,
 			documentTagService service.DocumentTagService,
+			companyUserService service.CompanyUserService,
 			cfg *config.Config,
 		) *http.Server {
 			deps := http.ServerDeps{
@@ -24,6 +25,7 @@ var Transport = fx.Options(
 				FolderService:      folderService,
 				DocumentService:    documentService,
 				DocumentTagService: documentTagService,
+				CompanyUserService: companyUserService,
 				Config:             cfg,
 			}
 			return http.NewServer(deps)

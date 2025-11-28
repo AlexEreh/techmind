@@ -94,3 +94,11 @@ func (r *companyUserRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]*
 		Where(companyuser.UserID(userID)).
 		All(ctx)
 }
+
+func (r *companyUserRepo) ListByUserWithCompany(ctx context.Context, userID uuid.UUID) ([]*ent.CompanyUser, error) {
+	return r.client.CompanyUser.
+		Query().
+		Where(companyuser.UserID(userID)).
+		WithCompany().
+		All(ctx)
+}

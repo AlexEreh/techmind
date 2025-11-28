@@ -10,6 +10,7 @@ import (
 )
 
 const UserIDContextKey = "user_id"
+const CompanyIDContextKey = "company_id"
 
 // jwtMiddleware проверяет JWT токен в заголовке Authorization
 func (s *Server) jwtMiddleware(c fiber.Ctx) error {

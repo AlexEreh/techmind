@@ -3,12 +3,14 @@ package http
 import (
 	"techmind/internal/service"
 	"techmind/internal/transport/http/handlers/auth"
+	"techmind/internal/transport/http/handlers/company_user"
 	"techmind/internal/transport/http/handlers/document"
 	"techmind/internal/transport/http/handlers/documenttag"
 	"techmind/internal/transport/http/handlers/folder"
 	"techmind/pkg/config"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/logger"
 )
 
 type ServerDeps struct {
@@ -16,6 +18,7 @@ type ServerDeps struct {
 	FolderService      service.FolderService
 	DocumentService    service.DocumentService
 	DocumentTagService service.DocumentTagService
+	CompanyUserService service.CompanyUserService
 	Config             *config.Config
 }
 
@@ -29,8 +32,16 @@ func NewServer(deps ServerDeps) *Server {
 		app:  fiber.New(),
 		deps: deps,
 	}
+	server.setupMiddleware()
 	server.setupRoutes()
 	return server
+}
+
+func (s *Server) setupMiddleware() {
+	// Добавляем логгер запросов
+	s.app.Use(logger.New(logger.Config{
+		Format: "[${time}] ${status} - ${method} ${path} - ${latency}\n",
+	}))
 }
 
 func (s *Server) setupRoutes() {
@@ -56,6 +67,11 @@ func (s *Server) setupRoutes() {
 	// Регистрация маршрутов для тегов документов
 	documentTagsGroup := private.Group("/document-tags")
 	documenttag.RegisterRoutes(documentTagsGroup, s.deps.DocumentTagService)
+
+	// Регистрация маршрутов для компаний
+	companiesGroup := private.Group("/companies")
+	//companiesGroup.Use(s.companyMiddleware)
+	company_user.RegisterRoutes(companiesGroup, s.deps.CompanyUserService)
 }
 
 func (s *Server) Listen(addr string) error {

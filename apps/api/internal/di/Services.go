@@ -2,6 +2,7 @@ package di
 
 import (
 	"techmind/internal/service/auth"
+	"techmind/internal/service/company_user"
 	"techmind/internal/service/document"
 	"techmind/internal/service/documenttag"
 	"techmind/internal/service/folder"
@@ -15,5 +16,6 @@ var Service = fx.Options(
 		document.NewService,
 		documenttag.NewService,
 		folder.NewService,
+		company_user.NewService,
 	),
 )

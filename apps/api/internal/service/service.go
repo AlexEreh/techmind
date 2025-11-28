@@ -139,3 +139,12 @@ type DocumentTagService interface {
 	// UpdateTag обновляет название тега
 	UpdateTag(ctx context.Context, tagID uuid.UUID, name string) (*ent.Tag, error)
 }
+
+// CompanyUserService определяет интерфейс для работы с пользователями компании
+type CompanyUserService interface {
+	// GetUserRole получает роль пользователя в конкретной компании
+	GetUserRole(ctx context.Context, userID, companyID uuid.UUID) (int, error)
+
+	// GetUserCompanies получает список всех компаний пользователя с информацией о ролях
+	GetUserCompanies(ctx context.Context, userID uuid.UUID) ([]*ent.CompanyUser, error)
+}
