@@ -1,6 +1,9 @@
 # Dockerfile for Next.js frontend
 FROM node:22.21.1-alpine AS base
 
+# Ensure pnpm is available in all stages by enabling corepack and preparing pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
@@ -47,4 +50,3 @@ ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
 CMD ["node", "server.js"]
-
