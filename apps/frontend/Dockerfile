@@ -11,7 +11,7 @@ WORKDIR /app
 
 # copy lockfile(s) and package manifest first for better layer caching
 COPY package.json pnpm-lock.yaml* package-lock.json* ./
-RUN pnpm install --frozen-lockfile --prefer-offline
+RUN pnpm install
 
 # copy source and build
 COPY . .
