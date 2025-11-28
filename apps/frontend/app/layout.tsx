@@ -37,11 +37,11 @@ export default function RootLayout({
           className={clsx(
               "min-h-screen text-foreground font-sans antialiased",
               fontSans.variable,
+              "dark" // Ensure dark theme is applied
           )}
           style={{
-              backgroundImage:
-                  'url("https://media.sketchfab.com/models/c46b152c6f904de799bff4415794d07c/thumbnails/63c01b440f1848f588b99edd9a47e408/53d062c22a204cdb848f10363b21efa1.jpeg")',
-              backgroundSize: "cover",
+              backgroundImage: 'url("/bg.png")',
+              backgroundSize: "100% 100%", // Ensure the background image stretches to cover the entire screen
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
           }}
