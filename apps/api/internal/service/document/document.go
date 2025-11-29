@@ -405,20 +405,41 @@ func (s *documentService) GetPreviewURL(ctx context.Context, documentID uuid.UUI
 }
 
 func (s *documentService) Search(ctx context.Context, companyID uuid.UUID, query string, folderID *uuid.UUID, tagIDs []uuid.UUID) ([]*service.DocumentWithTags, error) {
-	// TODO: Реализовать поиск через Elasticsearch
-	// Пока используем простую фильтрацию через БД
-
 	var documents []*ent.Document
 	var err error
 
-	if folderID != nil {
-		documents, err = s.documentRepo.ListByFolder(ctx, *folderID)
-	} else {
-		documents, err = s.documentRepo.ListByCompany(ctx, companyID)
-	}
+	// Если есть поисковый запрос, используем ТОЛЬКО Elasticsearch для полнотекстового поиска
+	if query != "" {
+		if s.elasticsearchClient == nil {
+			return nil, fmt.Errorf("elasticsearch is not configured")
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to search documents: %w", err)
+		documentIDs, err := s.searchInElasticsearch(ctx, companyID, query, folderID)
+		if err != nil {
+			return nil, fmt.Errorf("elasticsearch search failed: %w", err)
+		}
+
+		// Если ничего не найдено в Elasticsearch, возвращаем пустой результат
+		if len(documentIDs) == 0 {
+			return []*service.DocumentWithTags{}, nil
+		}
+
+		// Получаем документы по ID из Elasticsearch
+		documents, err = s.getDocumentsByIDs(ctx, documentIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get documents: %w", err)
+		}
+	} else {
+		// Если запрос пустой, получаем все документы компании/папки
+		if folderID != nil {
+			documents, err = s.documentRepo.ListByFolder(ctx, *folderID)
+		} else {
+			documents, err = s.documentRepo.ListByCompany(ctx, companyID)
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to get documents: %w", err)
+		}
 	}
 
 	// Фильтруем по тегам если указаны
@@ -449,6 +470,143 @@ func (s *documentService) Search(ctx context.Context, companyID uuid.UUID, query
 	}
 
 	return result, nil
+}
+
+// searchInElasticsearch выполняет полнотекстовой поиск в Elasticsearch
+func (s *documentService) searchInElasticsearch(ctx context.Context, companyID uuid.UUID, query string, folderID *uuid.UUID) ([]uuid.UUID, error) {
+	// Строим фильтры (must) - обязательные условия
+	must := []map[string]interface{}{
+		{
+			"term": map[string]interface{}{
+				"company_id": companyID.String(),
+			},
+		},
+	}
+
+	// Добавляем фильтр по папке, если указана
+	if folderID != nil {
+		must = append(must, map[string]interface{}{
+			"term": map[string]interface{}{
+				"folder_id": folderID.String(),
+			},
+		})
+	}
+
+	// Полнотекстовый поиск по имени и содержимому документа
+	should := []map[string]interface{}{
+		{
+			"match": map[string]interface{}{
+				"name": map[string]interface{}{
+					"query": query,
+					"boost": 2.0, // Повышаем релевантность совпадений в имени
+				},
+			},
+		},
+		{
+			"match": map[string]interface{}{
+				"text": map[string]interface{}{
+					"query": query,
+				},
+			},
+		},
+	}
+
+	searchQuery := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must":                 must,
+				"should":               should,
+				"minimum_should_match": 1,
+			},
+		},
+		"size": 1000, // Максимальное количество результатов
+	}
+
+	// Сериализуем запрос в JSON
+	queryJSON, err := json.Marshal(searchQuery)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal search query: %w", err)
+	}
+
+	// Логируем запрос для отладки
+	fmt.Printf("Elasticsearch query: %s\n", string(queryJSON))
+
+	// Выполняем поиск
+	res, err := s.elasticsearchClient.Search(
+		s.elasticsearchClient.Search.WithContext(ctx),
+		s.elasticsearchClient.Search.WithIndex("documents"),
+		s.elasticsearchClient.Search.WithBody(bytes.NewReader(queryJSON)),
+		s.elasticsearchClient.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("elasticsearch search request failed: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		bodyBytes, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("elasticsearch search error: %s", string(bodyBytes))
+	}
+
+	// Парсим результаты
+	var result map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to parse elasticsearch response: %w", err)
+	}
+
+	// Извлекаем ID документов из результатов
+	hits, ok := result["hits"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid elasticsearch response format")
+	}
+
+	hitsArray, ok := hits["hits"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid elasticsearch hits format")
+	}
+
+	fmt.Printf("Elasticsearch found %d documents\n", len(hitsArray))
+
+	documentIDs := make([]uuid.UUID, 0, len(hitsArray))
+	for _, hit := range hitsArray {
+		hitMap, ok := hit.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		source, ok := hitMap["_source"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		docIDStr, ok := source["document_id"].(string)
+		if !ok {
+			continue
+		}
+
+		docID, err := uuid.Parse(docIDStr)
+		if err != nil {
+			continue
+		}
+
+		documentIDs = append(documentIDs, docID)
+	}
+
+	return documentIDs, nil
+}
+
+// getDocumentsByIDs получает документы по списку ID
+func (s *documentService) getDocumentsByIDs(ctx context.Context, ids []uuid.UUID) ([]*ent.Document, error) {
+	documents := make([]*ent.Document, 0, len(ids))
+	for _, id := range ids {
+		doc, err := s.documentRepo.GetByID(ctx, id)
+		if err != nil {
+			// Пропускаем документы, которые не удалось получить
+			continue
+		}
+		documents = append(documents, doc)
+	}
+	return documents, nil
 }
 
 func (s *documentService) getDocumentTags(ctx context.Context, documentID uuid.UUID) ([]*ent.Tag, error) {
@@ -697,7 +855,6 @@ func (s *documentService) ExtractAndIndexText(ctx context.Context, documentID uu
 	if err != nil {
 		return fmt.Errorf("failed to marshal document for elasticsearch: %w", err)
 	}
-
 	// Индексируем документ в Elasticsearch
 	req := esapi.IndexRequest{
 		Index:      "documents",
