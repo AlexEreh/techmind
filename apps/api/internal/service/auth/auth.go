@@ -30,6 +30,7 @@ func NewService(userRepo repo.UserRepository, config *config.Config) service.Aut
 
 func (s *authService) Login(ctx context.Context, email, password string) (token string, expiresAt time.Time, err error) {
 	// Получаем пользователя по email
+	fmt.Println(email, password)
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("user not found: %w", err)

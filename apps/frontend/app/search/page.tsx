@@ -1,15 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import {useState, useEffect, memo} from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/files/Sidebar';
 import { SearchPanel } from '@/components/search/SearchPanel';
-import { FilePreview } from '@/components/files/FilePreview';
+import FilePreviewComponent from '@/components/files/FilePreview';
 import { FileInfo } from '@/components/files/FileInfo';
 import { documentsApi } from '@/lib/api/documents';
 import { Document } from '@/lib/api/types';
 import { Spinner } from '@heroui/spinner';
+
+const MemoizedFilePreview = memo(
+    FilePreviewComponent,
+    (prevProps, nextProps) => {
+        // Компонент не перерисовывается, если ID документа не изменился
+        return prevProps.document?.id === nextProps.document?.id;
+    }
+);
 
 export default function SearchPage() {
     const { user, currentCompany, isLoading: authLoading } = useAuth();
@@ -112,7 +120,7 @@ export default function SearchPage() {
             </div>
 
             <div className="flex-1 border-r-3 border-divider overflow-y-auto">
-                <FilePreview document={selectedDocument} />
+                <MemoizedFilePreview document={selectedDocument} />
             </div>
 
             <div className="w-80 overflow-y-auto">

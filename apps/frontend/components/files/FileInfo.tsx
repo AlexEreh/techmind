@@ -169,7 +169,7 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
             </Button>
             <Button
               color="danger"
-              variant="flat"
+              variant="light"
               className="w-full"
               startContent={<TrashIcon />}
               onPress={handleDeleteDocument}
