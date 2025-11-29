@@ -1,26 +1,93 @@
 version: "3"
 
 services:
-  backend:
-    build: .
-    volumes:
-      - "./prod.yml:/app/prod.yml"
-      - "./auth:/app/auth"
-    expose:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
   postgres:
     image: postgres:17.5
     expose:
       - "5432:5432"
-    volumes:
-      - "./pgdata:/var/lib/postgresql/data"
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgressdljkmbvljhkd
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - shared_network
+
+  minio:
+    image: minio/minio:latest
+    expose:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    networks:
+      - shared_network
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    expose:
+      - "3030:3000"
+    command:
+      - "gotenberg"
+      - "--api-timeout=60s"
+      - "--log-level=info"
+    networks:
+      - shared_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    expose:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=true
+      - ELASTIC_PASSWORD=changeme
+      - xpack.security.http.ssl.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - shared_network
+
+  sajaridocd:
+    image: sajari/docd:latest
+    command: ["/docd", "-addr", ":8888"]
+    expose:
+      - "8888:8888"
+    networks:
+      - shared_network
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    expose:
+      - "3000:3000"
+    networks:
+      - shared_network
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    expose:
+      - "58080:8080"
+    volumes:
+      - ./dev.yml:/app/dev.yml
+    networks:
+      - shared_network
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8050:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    driver: bridge

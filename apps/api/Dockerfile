@@ -11,7 +11,7 @@ RUN go mod tidy
 RUN go mod download
 
 # Copy source code
-COPY ../.. .
+COPY . .
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o app ./cmd/main.go
@@ -31,7 +31,8 @@ WORKDIR /app
 # Copy the binary from builder
 
 COPY ./migrations ./migrations
-COPY --from=builder /build/app .
+# Explicitly place the binary at /app/app
+COPY --from=builder /build/app /app/app
 
-CMD ["./app"]
-
+# Use absolute path for entrypoint to avoid path issues
+ENTRYPOINT ["/app/app"]
