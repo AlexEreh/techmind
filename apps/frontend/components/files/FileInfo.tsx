@@ -197,6 +197,13 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
         <p className="text-sm">{formatDate(document.created_at)}</p>
       </div>
 
+      {document.updated_at && document.updated_at !== document.created_at && (
+        <div>
+          <p className="text-sm text-default-500 mb-1">Дата обновления</p>
+          <p className="text-sm">{formatDate(document.updated_at)}</p>
+        </div>
+      )}
+
       <Divider />
 
       {loadingUsers ? (

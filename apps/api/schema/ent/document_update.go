@@ -12,6 +12,8 @@ import (
 	"techmind/schema/ent/folder"
 	"techmind/schema/ent/predicate"
 	"techmind/schema/ent/sender"
+	"techmind/schema/ent/user"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -184,6 +186,52 @@ func (_u *DocumentUpdate) ClearSenderID() *DocumentUpdate {
 	return _u
 }
 
+// SetCreatedBy sets the "created_by" field.
+func (_u *DocumentUpdate) SetCreatedBy(v uuid.UUID) *DocumentUpdate {
+	_u.mutation.SetCreatedBy(v)
+	return _u
+}
+
+// SetNillableCreatedBy sets the "created_by" field if the given value is not nil.
+func (_u *DocumentUpdate) SetNillableCreatedBy(v *uuid.UUID) *DocumentUpdate {
+	if v != nil {
+		_u.SetCreatedBy(*v)
+	}
+	return _u
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (_u *DocumentUpdate) ClearCreatedBy() *DocumentUpdate {
+	_u.mutation.ClearCreatedBy()
+	return _u
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (_u *DocumentUpdate) SetUpdatedBy(v uuid.UUID) *DocumentUpdate {
+	_u.mutation.SetUpdatedBy(v)
+	return _u
+}
+
+// SetNillableUpdatedBy sets the "updated_by" field if the given value is not nil.
+func (_u *DocumentUpdate) SetNillableUpdatedBy(v *uuid.UUID) *DocumentUpdate {
+	if v != nil {
+		_u.SetUpdatedBy(*v)
+	}
+	return _u
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (_u *DocumentUpdate) ClearUpdatedBy() *DocumentUpdate {
+	_u.mutation.ClearUpdatedBy()
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *DocumentUpdate) SetUpdatedAt(v time.Time) *DocumentUpdate {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
 // SetCompany sets the "company" edge to the Company entity.
 func (_u *DocumentUpdate) SetCompany(v *Company) *DocumentUpdate {
 	return _u.SetCompanyID(v.ID)
@@ -197,6 +245,44 @@ func (_u *DocumentUpdate) SetFolder(v *Folder) *DocumentUpdate {
 // SetSender sets the "sender" edge to the Sender entity.
 func (_u *DocumentUpdate) SetSender(v *Sender) *DocumentUpdate {
 	return _u.SetSenderID(v.ID)
+}
+
+// SetCreatedByUserID sets the "created_by_user" edge to the User entity by ID.
+func (_u *DocumentUpdate) SetCreatedByUserID(id uuid.UUID) *DocumentUpdate {
+	_u.mutation.SetCreatedByUserID(id)
+	return _u
+}
+
+// SetNillableCreatedByUserID sets the "created_by_user" edge to the User entity by ID if the given value is not nil.
+func (_u *DocumentUpdate) SetNillableCreatedByUserID(id *uuid.UUID) *DocumentUpdate {
+	if id != nil {
+		_u = _u.SetCreatedByUserID(*id)
+	}
+	return _u
+}
+
+// SetCreatedByUser sets the "created_by_user" edge to the User entity.
+func (_u *DocumentUpdate) SetCreatedByUser(v *User) *DocumentUpdate {
+	return _u.SetCreatedByUserID(v.ID)
+}
+
+// SetUpdatedByUserID sets the "updated_by_user" edge to the User entity by ID.
+func (_u *DocumentUpdate) SetUpdatedByUserID(id uuid.UUID) *DocumentUpdate {
+	_u.mutation.SetUpdatedByUserID(id)
+	return _u
+}
+
+// SetNillableUpdatedByUserID sets the "updated_by_user" edge to the User entity by ID if the given value is not nil.
+func (_u *DocumentUpdate) SetNillableUpdatedByUserID(id *uuid.UUID) *DocumentUpdate {
+	if id != nil {
+		_u = _u.SetUpdatedByUserID(*id)
+	}
+	return _u
+}
+
+// SetUpdatedByUser sets the "updated_by_user" edge to the User entity.
+func (_u *DocumentUpdate) SetUpdatedByUser(v *User) *DocumentUpdate {
+	return _u.SetUpdatedByUserID(v.ID)
 }
 
 // AddDocumentTagIDs adds the "document_tags" edge to the DocumentTag entity by IDs.
@@ -237,6 +323,18 @@ func (_u *DocumentUpdate) ClearSender() *DocumentUpdate {
 	return _u
 }
 
+// ClearCreatedByUser clears the "created_by_user" edge to the User entity.
+func (_u *DocumentUpdate) ClearCreatedByUser() *DocumentUpdate {
+	_u.mutation.ClearCreatedByUser()
+	return _u
+}
+
+// ClearUpdatedByUser clears the "updated_by_user" edge to the User entity.
+func (_u *DocumentUpdate) ClearUpdatedByUser() *DocumentUpdate {
+	_u.mutation.ClearUpdatedByUser()
+	return _u
+}
+
 // ClearDocumentTags clears all "document_tags" edges to the DocumentTag entity.
 func (_u *DocumentUpdate) ClearDocumentTags() *DocumentUpdate {
 	_u.mutation.ClearDocumentTags()
@@ -260,6 +358,7 @@ func (_u *DocumentUpdate) RemoveDocumentTags(v ...*DocumentTag) *DocumentUpdate 
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *DocumentUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -282,6 +381,14 @@ func (_u *DocumentUpdate) Exec(ctx context.Context) error {
 func (_u *DocumentUpdate) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_u *DocumentUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := document.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -354,6 +461,9 @@ func (_u *DocumentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Checksum(); ok {
 		_spec.SetField(document.FieldChecksum, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(document.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if _u.mutation.CompanyCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -435,6 +545,64 @@ func (_u *DocumentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CreatedByUserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.CreatedByUserTable,
+			Columns: []string{document.CreatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CreatedByUserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.CreatedByUserTable,
+			Columns: []string{document.CreatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UpdatedByUserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.UpdatedByUserTable,
+			Columns: []string{document.UpdatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UpdatedByUserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.UpdatedByUserTable,
+			Columns: []string{document.UpdatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -660,6 +828,52 @@ func (_u *DocumentUpdateOne) ClearSenderID() *DocumentUpdateOne {
 	return _u
 }
 
+// SetCreatedBy sets the "created_by" field.
+func (_u *DocumentUpdateOne) SetCreatedBy(v uuid.UUID) *DocumentUpdateOne {
+	_u.mutation.SetCreatedBy(v)
+	return _u
+}
+
+// SetNillableCreatedBy sets the "created_by" field if the given value is not nil.
+func (_u *DocumentUpdateOne) SetNillableCreatedBy(v *uuid.UUID) *DocumentUpdateOne {
+	if v != nil {
+		_u.SetCreatedBy(*v)
+	}
+	return _u
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (_u *DocumentUpdateOne) ClearCreatedBy() *DocumentUpdateOne {
+	_u.mutation.ClearCreatedBy()
+	return _u
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (_u *DocumentUpdateOne) SetUpdatedBy(v uuid.UUID) *DocumentUpdateOne {
+	_u.mutation.SetUpdatedBy(v)
+	return _u
+}
+
+// SetNillableUpdatedBy sets the "updated_by" field if the given value is not nil.
+func (_u *DocumentUpdateOne) SetNillableUpdatedBy(v *uuid.UUID) *DocumentUpdateOne {
+	if v != nil {
+		_u.SetUpdatedBy(*v)
+	}
+	return _u
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (_u *DocumentUpdateOne) ClearUpdatedBy() *DocumentUpdateOne {
+	_u.mutation.ClearUpdatedBy()
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *DocumentUpdateOne) SetUpdatedAt(v time.Time) *DocumentUpdateOne {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
 // SetCompany sets the "company" edge to the Company entity.
 func (_u *DocumentUpdateOne) SetCompany(v *Company) *DocumentUpdateOne {
 	return _u.SetCompanyID(v.ID)
@@ -673,6 +887,44 @@ func (_u *DocumentUpdateOne) SetFolder(v *Folder) *DocumentUpdateOne {
 // SetSender sets the "sender" edge to the Sender entity.
 func (_u *DocumentUpdateOne) SetSender(v *Sender) *DocumentUpdateOne {
 	return _u.SetSenderID(v.ID)
+}
+
+// SetCreatedByUserID sets the "created_by_user" edge to the User entity by ID.
+func (_u *DocumentUpdateOne) SetCreatedByUserID(id uuid.UUID) *DocumentUpdateOne {
+	_u.mutation.SetCreatedByUserID(id)
+	return _u
+}
+
+// SetNillableCreatedByUserID sets the "created_by_user" edge to the User entity by ID if the given value is not nil.
+func (_u *DocumentUpdateOne) SetNillableCreatedByUserID(id *uuid.UUID) *DocumentUpdateOne {
+	if id != nil {
+		_u = _u.SetCreatedByUserID(*id)
+	}
+	return _u
+}
+
+// SetCreatedByUser sets the "created_by_user" edge to the User entity.
+func (_u *DocumentUpdateOne) SetCreatedByUser(v *User) *DocumentUpdateOne {
+	return _u.SetCreatedByUserID(v.ID)
+}
+
+// SetUpdatedByUserID sets the "updated_by_user" edge to the User entity by ID.
+func (_u *DocumentUpdateOne) SetUpdatedByUserID(id uuid.UUID) *DocumentUpdateOne {
+	_u.mutation.SetUpdatedByUserID(id)
+	return _u
+}
+
+// SetNillableUpdatedByUserID sets the "updated_by_user" edge to the User entity by ID if the given value is not nil.
+func (_u *DocumentUpdateOne) SetNillableUpdatedByUserID(id *uuid.UUID) *DocumentUpdateOne {
+	if id != nil {
+		_u = _u.SetUpdatedByUserID(*id)
+	}
+	return _u
+}
+
+// SetUpdatedByUser sets the "updated_by_user" edge to the User entity.
+func (_u *DocumentUpdateOne) SetUpdatedByUser(v *User) *DocumentUpdateOne {
+	return _u.SetUpdatedByUserID(v.ID)
 }
 
 // AddDocumentTagIDs adds the "document_tags" edge to the DocumentTag entity by IDs.
@@ -713,6 +965,18 @@ func (_u *DocumentUpdateOne) ClearSender() *DocumentUpdateOne {
 	return _u
 }
 
+// ClearCreatedByUser clears the "created_by_user" edge to the User entity.
+func (_u *DocumentUpdateOne) ClearCreatedByUser() *DocumentUpdateOne {
+	_u.mutation.ClearCreatedByUser()
+	return _u
+}
+
+// ClearUpdatedByUser clears the "updated_by_user" edge to the User entity.
+func (_u *DocumentUpdateOne) ClearUpdatedByUser() *DocumentUpdateOne {
+	_u.mutation.ClearUpdatedByUser()
+	return _u
+}
+
 // ClearDocumentTags clears all "document_tags" edges to the DocumentTag entity.
 func (_u *DocumentUpdateOne) ClearDocumentTags() *DocumentUpdateOne {
 	_u.mutation.ClearDocumentTags()
@@ -749,6 +1013,7 @@ func (_u *DocumentUpdateOne) Select(field string, fields ...string) *DocumentUpd
 
 // Save executes the query and returns the updated Document entity.
 func (_u *DocumentUpdateOne) Save(ctx context.Context) (*Document, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -771,6 +1036,14 @@ func (_u *DocumentUpdateOne) Exec(ctx context.Context) error {
 func (_u *DocumentUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_u *DocumentUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := document.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -861,6 +1134,9 @@ func (_u *DocumentUpdateOne) sqlSave(ctx context.Context) (_node *Document, err 
 	if value, ok := _u.mutation.Checksum(); ok {
 		_spec.SetField(document.FieldChecksum, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(document.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if _u.mutation.CompanyCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -941,6 +1217,64 @@ func (_u *DocumentUpdateOne) sqlSave(ctx context.Context) (_node *Document, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CreatedByUserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.CreatedByUserTable,
+			Columns: []string{document.CreatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CreatedByUserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.CreatedByUserTable,
+			Columns: []string{document.CreatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UpdatedByUserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.UpdatedByUserTable,
+			Columns: []string{document.UpdatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UpdatedByUserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.UpdatedByUserTable,
+			Columns: []string{document.UpdatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

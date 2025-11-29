@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"techmind/schema/ent/companyuser"
+	"techmind/schema/ent/document"
 	"techmind/schema/ent/predicate"
 	"techmind/schema/ent/user"
 
@@ -21,12 +22,14 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx              *QueryContext
-	order            []user.OrderOption
-	inters           []Interceptor
-	predicates       []predicate.User
-	withCompanyUsers *CompanyUserQuery
-	modifiers        []func(*sql.Selector)
+	ctx                  *QueryContext
+	order                []user.OrderOption
+	inters               []Interceptor
+	predicates           []predicate.User
+	withCompanyUsers     *CompanyUserQuery
+	withCreatedDocuments *DocumentQuery
+	withUpdatedDocuments *DocumentQuery
+	modifiers            []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,6 +81,50 @@ func (_q *UserQuery) QueryCompanyUsers() *CompanyUserQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(companyuser.Table, companyuser.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.CompanyUsersTable, user.CompanyUsersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCreatedDocuments chains the current query on the "created_documents" edge.
+func (_q *UserQuery) QueryCreatedDocuments() *DocumentQuery {
+	query := (&DocumentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(document.Table, document.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.CreatedDocumentsTable, user.CreatedDocumentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUpdatedDocuments chains the current query on the "updated_documents" edge.
+func (_q *UserQuery) QueryUpdatedDocuments() *DocumentQuery {
+	query := (&DocumentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(document.Table, document.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.UpdatedDocumentsTable, user.UpdatedDocumentsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -272,12 +319,14 @@ func (_q *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:           _q.config,
-		ctx:              _q.ctx.Clone(),
-		order:            append([]user.OrderOption{}, _q.order...),
-		inters:           append([]Interceptor{}, _q.inters...),
-		predicates:       append([]predicate.User{}, _q.predicates...),
-		withCompanyUsers: _q.withCompanyUsers.Clone(),
+		config:               _q.config,
+		ctx:                  _q.ctx.Clone(),
+		order:                append([]user.OrderOption{}, _q.order...),
+		inters:               append([]Interceptor{}, _q.inters...),
+		predicates:           append([]predicate.User{}, _q.predicates...),
+		withCompanyUsers:     _q.withCompanyUsers.Clone(),
+		withCreatedDocuments: _q.withCreatedDocuments.Clone(),
+		withUpdatedDocuments: _q.withUpdatedDocuments.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -293,6 +342,28 @@ func (_q *UserQuery) WithCompanyUsers(opts ...func(*CompanyUserQuery)) *UserQuer
 		opt(query)
 	}
 	_q.withCompanyUsers = query
+	return _q
+}
+
+// WithCreatedDocuments tells the query-builder to eager-load the nodes that are connected to
+// the "created_documents" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithCreatedDocuments(opts ...func(*DocumentQuery)) *UserQuery {
+	query := (&DocumentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCreatedDocuments = query
+	return _q
+}
+
+// WithUpdatedDocuments tells the query-builder to eager-load the nodes that are connected to
+// the "updated_documents" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithUpdatedDocuments(opts ...func(*DocumentQuery)) *UserQuery {
+	query := (&DocumentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withUpdatedDocuments = query
 	return _q
 }
 
@@ -374,8 +445,10 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [3]bool{
 			_q.withCompanyUsers != nil,
+			_q.withCreatedDocuments != nil,
+			_q.withUpdatedDocuments != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -403,6 +476,20 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadCompanyUsers(ctx, query, nodes,
 			func(n *User) { n.Edges.CompanyUsers = []*CompanyUser{} },
 			func(n *User, e *CompanyUser) { n.Edges.CompanyUsers = append(n.Edges.CompanyUsers, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withCreatedDocuments; query != nil {
+		if err := _q.loadCreatedDocuments(ctx, query, nodes,
+			func(n *User) { n.Edges.CreatedDocuments = []*Document{} },
+			func(n *User, e *Document) { n.Edges.CreatedDocuments = append(n.Edges.CreatedDocuments, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withUpdatedDocuments; query != nil {
+		if err := _q.loadUpdatedDocuments(ctx, query, nodes,
+			func(n *User) { n.Edges.UpdatedDocuments = []*Document{} },
+			func(n *User, e *Document) { n.Edges.UpdatedDocuments = append(n.Edges.UpdatedDocuments, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -434,6 +521,72 @@ func (_q *UserQuery) loadCompanyUsers(ctx context.Context, query *CompanyUserQue
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadCreatedDocuments(ctx context.Context, query *DocumentQuery, nodes []*User, init func(*User), assign func(*User, *Document)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(document.FieldCreatedBy)
+	}
+	query.Where(predicate.Document(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.CreatedDocumentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CreatedBy
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "created_by" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "created_by" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadUpdatedDocuments(ctx context.Context, query *DocumentQuery, nodes []*User, init func(*User), assign func(*User, *Document)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(document.FieldUpdatedBy)
+	}
+	query.Where(predicate.Document(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.UpdatedDocumentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UpdatedBy
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "updated_by" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "updated_by" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

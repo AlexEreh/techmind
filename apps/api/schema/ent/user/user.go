@@ -21,6 +21,10 @@ const (
 	FieldPassword = "password"
 	// EdgeCompanyUsers holds the string denoting the company_users edge name in mutations.
 	EdgeCompanyUsers = "company_users"
+	// EdgeCreatedDocuments holds the string denoting the created_documents edge name in mutations.
+	EdgeCreatedDocuments = "created_documents"
+	// EdgeUpdatedDocuments holds the string denoting the updated_documents edge name in mutations.
+	EdgeUpdatedDocuments = "updated_documents"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// CompanyUsersTable is the table that holds the company_users relation/edge.
@@ -30,6 +34,20 @@ const (
 	CompanyUsersInverseTable = "company_users"
 	// CompanyUsersColumn is the table column denoting the company_users relation/edge.
 	CompanyUsersColumn = "user_id"
+	// CreatedDocumentsTable is the table that holds the created_documents relation/edge.
+	CreatedDocumentsTable = "documents"
+	// CreatedDocumentsInverseTable is the table name for the Document entity.
+	// It exists in this package in order to avoid circular dependency with the "document" package.
+	CreatedDocumentsInverseTable = "documents"
+	// CreatedDocumentsColumn is the table column denoting the created_documents relation/edge.
+	CreatedDocumentsColumn = "created_by"
+	// UpdatedDocumentsTable is the table that holds the updated_documents relation/edge.
+	UpdatedDocumentsTable = "documents"
+	// UpdatedDocumentsInverseTable is the table name for the Document entity.
+	// It exists in this package in order to avoid circular dependency with the "document" package.
+	UpdatedDocumentsInverseTable = "documents"
+	// UpdatedDocumentsColumn is the table column denoting the updated_documents relation/edge.
+	UpdatedDocumentsColumn = "updated_by"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -97,10 +115,52 @@ func ByCompanyUsers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newCompanyUsersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByCreatedDocumentsCount orders the results by created_documents count.
+func ByCreatedDocumentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCreatedDocumentsStep(), opts...)
+	}
+}
+
+// ByCreatedDocuments orders the results by created_documents terms.
+func ByCreatedDocuments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCreatedDocumentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByUpdatedDocumentsCount orders the results by updated_documents count.
+func ByUpdatedDocumentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUpdatedDocumentsStep(), opts...)
+	}
+}
+
+// ByUpdatedDocuments orders the results by updated_documents terms.
+func ByUpdatedDocuments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUpdatedDocumentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newCompanyUsersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CompanyUsersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, CompanyUsersTable, CompanyUsersColumn),
+	)
+}
+func newCreatedDocumentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CreatedDocumentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, CreatedDocumentsTable, CreatedDocumentsColumn),
+	)
+}
+func newUpdatedDocumentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UpdatedDocumentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, UpdatedDocumentsTable, UpdatedDocumentsColumn),
 	)
 }

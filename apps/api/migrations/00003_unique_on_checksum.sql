@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-ALTER TABLE documents ADD CONSTRAINT unique_checksum UNIQUE (checksum);
+ALTER TABLE documents ADD CONSTRAINT unique_checksum UNIQUE (company_id, checksum);
 -- +goose StatementEnd
 
 -- +goose Down

@@ -11,6 +11,7 @@ import (
 	"techmind/schema/ent/documenttag"
 	"techmind/schema/ent/folder"
 	"techmind/schema/ent/sender"
+	"techmind/schema/ent/user"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -103,6 +104,34 @@ func (_c *DocumentCreate) SetNillableSenderID(v *uuid.UUID) *DocumentCreate {
 	return _c
 }
 
+// SetCreatedBy sets the "created_by" field.
+func (_c *DocumentCreate) SetCreatedBy(v uuid.UUID) *DocumentCreate {
+	_c.mutation.SetCreatedBy(v)
+	return _c
+}
+
+// SetNillableCreatedBy sets the "created_by" field if the given value is not nil.
+func (_c *DocumentCreate) SetNillableCreatedBy(v *uuid.UUID) *DocumentCreate {
+	if v != nil {
+		_c.SetCreatedBy(*v)
+	}
+	return _c
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (_c *DocumentCreate) SetUpdatedBy(v uuid.UUID) *DocumentCreate {
+	_c.mutation.SetUpdatedBy(v)
+	return _c
+}
+
+// SetNillableUpdatedBy sets the "updated_by" field if the given value is not nil.
+func (_c *DocumentCreate) SetNillableUpdatedBy(v *uuid.UUID) *DocumentCreate {
+	if v != nil {
+		_c.SetUpdatedBy(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *DocumentCreate) SetCreatedAt(v time.Time) *DocumentCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -113,6 +142,20 @@ func (_c *DocumentCreate) SetCreatedAt(v time.Time) *DocumentCreate {
 func (_c *DocumentCreate) SetNillableCreatedAt(v *time.Time) *DocumentCreate {
 	if v != nil {
 		_c.SetCreatedAt(*v)
+	}
+	return _c
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_c *DocumentCreate) SetUpdatedAt(v time.Time) *DocumentCreate {
+	_c.mutation.SetUpdatedAt(v)
+	return _c
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_c *DocumentCreate) SetNillableUpdatedAt(v *time.Time) *DocumentCreate {
+	if v != nil {
+		_c.SetUpdatedAt(*v)
 	}
 	return _c
 }
@@ -144,6 +187,44 @@ func (_c *DocumentCreate) SetFolder(v *Folder) *DocumentCreate {
 // SetSender sets the "sender" edge to the Sender entity.
 func (_c *DocumentCreate) SetSender(v *Sender) *DocumentCreate {
 	return _c.SetSenderID(v.ID)
+}
+
+// SetCreatedByUserID sets the "created_by_user" edge to the User entity by ID.
+func (_c *DocumentCreate) SetCreatedByUserID(id uuid.UUID) *DocumentCreate {
+	_c.mutation.SetCreatedByUserID(id)
+	return _c
+}
+
+// SetNillableCreatedByUserID sets the "created_by_user" edge to the User entity by ID if the given value is not nil.
+func (_c *DocumentCreate) SetNillableCreatedByUserID(id *uuid.UUID) *DocumentCreate {
+	if id != nil {
+		_c = _c.SetCreatedByUserID(*id)
+	}
+	return _c
+}
+
+// SetCreatedByUser sets the "created_by_user" edge to the User entity.
+func (_c *DocumentCreate) SetCreatedByUser(v *User) *DocumentCreate {
+	return _c.SetCreatedByUserID(v.ID)
+}
+
+// SetUpdatedByUserID sets the "updated_by_user" edge to the User entity by ID.
+func (_c *DocumentCreate) SetUpdatedByUserID(id uuid.UUID) *DocumentCreate {
+	_c.mutation.SetUpdatedByUserID(id)
+	return _c
+}
+
+// SetNillableUpdatedByUserID sets the "updated_by_user" edge to the User entity by ID if the given value is not nil.
+func (_c *DocumentCreate) SetNillableUpdatedByUserID(id *uuid.UUID) *DocumentCreate {
+	if id != nil {
+		_c = _c.SetUpdatedByUserID(*id)
+	}
+	return _c
+}
+
+// SetUpdatedByUser sets the "updated_by_user" edge to the User entity.
+func (_c *DocumentCreate) SetUpdatedByUser(v *User) *DocumentCreate {
+	return _c.SetUpdatedByUserID(v.ID)
 }
 
 // AddDocumentTagIDs adds the "document_tags" edge to the DocumentTag entity by IDs.
@@ -200,6 +281,10 @@ func (_c *DocumentCreate) defaults() {
 		v := document.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		v := document.DefaultUpdatedAt()
+		_c.mutation.SetUpdatedAt(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := document.DefaultID()
 		_c.mutation.SetID(v)
@@ -248,6 +333,9 @@ func (_c *DocumentCreate) check() error {
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Document.created_at"`)}
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Document.updated_at"`)}
 	}
 	if len(_c.mutation.CompanyIDs()) == 0 {
 		return &ValidationError{Name: "company", err: errors.New(`ent: missing required edge "Document.company"`)}
@@ -315,6 +403,10 @@ func (_c *DocumentCreate) createSpec() (*Document, *sqlgraph.CreateSpec) {
 		_spec.SetField(document.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
+	if value, ok := _c.mutation.UpdatedAt(); ok {
+		_spec.SetField(document.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
 	if nodes := _c.mutation.CompanyIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -364,6 +456,40 @@ func (_c *DocumentCreate) createSpec() (*Document, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.SenderID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CreatedByUserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.CreatedByUserTable,
+			Columns: []string{document.CreatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.CreatedBy = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.UpdatedByUserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.UpdatedByUserTable,
+			Columns: []string{document.UpdatedByUserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UpdatedBy = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.DocumentTagsIDs(); len(nodes) > 0 {

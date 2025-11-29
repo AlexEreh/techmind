@@ -186,6 +186,7 @@ func (s *documentService) Upload(ctx context.Context, input service.DocumentUplo
 		input.FileSize,
 		input.MimeType,
 		checksum,
+		input.UserID,
 	)
 	if err != nil {
 		// Удаляем файл из MinIO если не удалось создать запись в БД
@@ -334,6 +335,7 @@ func (s *documentService) Update(ctx context.Context, documentID uuid.UUID, inpu
 		input.FolderID,
 		input.SenderID,
 		input.Name,
+		input.UserID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update document: %w", err)

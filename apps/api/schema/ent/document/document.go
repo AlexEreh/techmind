@@ -33,14 +33,24 @@ const (
 	FieldChecksum = "checksum"
 	// FieldSenderID holds the string denoting the sender_id field in the database.
 	FieldSenderID = "sender_id"
+	// FieldCreatedBy holds the string denoting the created_by field in the database.
+	FieldCreatedBy = "created_by"
+	// FieldUpdatedBy holds the string denoting the updated_by field in the database.
+	FieldUpdatedBy = "updated_by"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
 	// EdgeCompany holds the string denoting the company edge name in mutations.
 	EdgeCompany = "company"
 	// EdgeFolder holds the string denoting the folder edge name in mutations.
 	EdgeFolder = "folder"
 	// EdgeSender holds the string denoting the sender edge name in mutations.
 	EdgeSender = "sender"
+	// EdgeCreatedByUser holds the string denoting the created_by_user edge name in mutations.
+	EdgeCreatedByUser = "created_by_user"
+	// EdgeUpdatedByUser holds the string denoting the updated_by_user edge name in mutations.
+	EdgeUpdatedByUser = "updated_by_user"
 	// EdgeDocumentTags holds the string denoting the document_tags edge name in mutations.
 	EdgeDocumentTags = "document_tags"
 	// Table holds the table name of the document in the database.
@@ -66,6 +76,20 @@ const (
 	SenderInverseTable = "senders"
 	// SenderColumn is the table column denoting the sender relation/edge.
 	SenderColumn = "sender_id"
+	// CreatedByUserTable is the table that holds the created_by_user relation/edge.
+	CreatedByUserTable = "documents"
+	// CreatedByUserInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	CreatedByUserInverseTable = "users"
+	// CreatedByUserColumn is the table column denoting the created_by_user relation/edge.
+	CreatedByUserColumn = "created_by"
+	// UpdatedByUserTable is the table that holds the updated_by_user relation/edge.
+	UpdatedByUserTable = "documents"
+	// UpdatedByUserInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	UpdatedByUserInverseTable = "users"
+	// UpdatedByUserColumn is the table column denoting the updated_by_user relation/edge.
+	UpdatedByUserColumn = "updated_by"
 	// DocumentTagsTable is the table that holds the document_tags relation/edge. The primary key declared below.
 	DocumentTagsTable = "document_document_tags"
 	// DocumentTagsInverseTable is the table name for the DocumentTag entity.
@@ -85,7 +109,10 @@ var Columns = []string{
 	FieldMimeType,
 	FieldChecksum,
 	FieldSenderID,
+	FieldCreatedBy,
+	FieldUpdatedBy,
 	FieldCreatedAt,
+	FieldUpdatedAt,
 }
 
 var (
@@ -115,6 +142,10 @@ var (
 	ChecksumValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
+	DefaultUpdatedAt func() time.Time
+	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
+	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -172,9 +203,24 @@ func BySenderID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSenderID, opts...).ToFunc()
 }
 
+// ByCreatedBy orders the results by the created_by field.
+func ByCreatedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedBy, opts...).ToFunc()
+}
+
+// ByUpdatedBy orders the results by the updated_by field.
+func ByUpdatedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedBy, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
 // ByCompanyField orders the results by company field.
@@ -195,6 +241,20 @@ func ByFolderField(field string, opts ...sql.OrderTermOption) OrderOption {
 func BySenderField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newSenderStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByCreatedByUserField orders the results by created_by_user field.
+func ByCreatedByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCreatedByUserStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByUpdatedByUserField orders the results by updated_by_user field.
+func ByUpdatedByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUpdatedByUserStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -230,6 +290,20 @@ func newSenderStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SenderInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, SenderTable, SenderColumn),
+	)
+}
+func newCreatedByUserStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CreatedByUserInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, CreatedByUserTable, CreatedByUserColumn),
+	)
+}
+func newUpdatedByUserStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UpdatedByUserInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, UpdatedByUserTable, UpdatedByUserColumn),
 	)
 }
 func newDocumentTagsStep() *sqlgraph.Step {

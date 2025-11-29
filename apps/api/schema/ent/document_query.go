@@ -13,6 +13,7 @@ import (
 	"techmind/schema/ent/folder"
 	"techmind/schema/ent/predicate"
 	"techmind/schema/ent/sender"
+	"techmind/schema/ent/user"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -24,15 +25,17 @@ import (
 // DocumentQuery is the builder for querying Document entities.
 type DocumentQuery struct {
 	config
-	ctx              *QueryContext
-	order            []document.OrderOption
-	inters           []Interceptor
-	predicates       []predicate.Document
-	withCompany      *CompanyQuery
-	withFolder       *FolderQuery
-	withSender       *SenderQuery
-	withDocumentTags *DocumentTagQuery
-	modifiers        []func(*sql.Selector)
+	ctx               *QueryContext
+	order             []document.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.Document
+	withCompany       *CompanyQuery
+	withFolder        *FolderQuery
+	withSender        *SenderQuery
+	withCreatedByUser *UserQuery
+	withUpdatedByUser *UserQuery
+	withDocumentTags  *DocumentTagQuery
+	modifiers         []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -128,6 +131,50 @@ func (_q *DocumentQuery) QuerySender() *SenderQuery {
 			sqlgraph.From(document.Table, document.FieldID, selector),
 			sqlgraph.To(sender.Table, sender.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, document.SenderTable, document.SenderColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCreatedByUser chains the current query on the "created_by_user" edge.
+func (_q *DocumentQuery) QueryCreatedByUser() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(document.Table, document.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, document.CreatedByUserTable, document.CreatedByUserColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUpdatedByUser chains the current query on the "updated_by_user" edge.
+func (_q *DocumentQuery) QueryUpdatedByUser() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(document.Table, document.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, document.UpdatedByUserTable, document.UpdatedByUserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -344,15 +391,17 @@ func (_q *DocumentQuery) Clone() *DocumentQuery {
 		return nil
 	}
 	return &DocumentQuery{
-		config:           _q.config,
-		ctx:              _q.ctx.Clone(),
-		order:            append([]document.OrderOption{}, _q.order...),
-		inters:           append([]Interceptor{}, _q.inters...),
-		predicates:       append([]predicate.Document{}, _q.predicates...),
-		withCompany:      _q.withCompany.Clone(),
-		withFolder:       _q.withFolder.Clone(),
-		withSender:       _q.withSender.Clone(),
-		withDocumentTags: _q.withDocumentTags.Clone(),
+		config:            _q.config,
+		ctx:               _q.ctx.Clone(),
+		order:             append([]document.OrderOption{}, _q.order...),
+		inters:            append([]Interceptor{}, _q.inters...),
+		predicates:        append([]predicate.Document{}, _q.predicates...),
+		withCompany:       _q.withCompany.Clone(),
+		withFolder:        _q.withFolder.Clone(),
+		withSender:        _q.withSender.Clone(),
+		withCreatedByUser: _q.withCreatedByUser.Clone(),
+		withUpdatedByUser: _q.withUpdatedByUser.Clone(),
+		withDocumentTags:  _q.withDocumentTags.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -390,6 +439,28 @@ func (_q *DocumentQuery) WithSender(opts ...func(*SenderQuery)) *DocumentQuery {
 		opt(query)
 	}
 	_q.withSender = query
+	return _q
+}
+
+// WithCreatedByUser tells the query-builder to eager-load the nodes that are connected to
+// the "created_by_user" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *DocumentQuery) WithCreatedByUser(opts ...func(*UserQuery)) *DocumentQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCreatedByUser = query
+	return _q
+}
+
+// WithUpdatedByUser tells the query-builder to eager-load the nodes that are connected to
+// the "updated_by_user" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *DocumentQuery) WithUpdatedByUser(opts ...func(*UserQuery)) *DocumentQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withUpdatedByUser = query
 	return _q
 }
 
@@ -482,10 +553,12 @@ func (_q *DocumentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Doc
 	var (
 		nodes       = []*Document{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [6]bool{
 			_q.withCompany != nil,
 			_q.withFolder != nil,
 			_q.withSender != nil,
+			_q.withCreatedByUser != nil,
+			_q.withUpdatedByUser != nil,
 			_q.withDocumentTags != nil,
 		}
 	)
@@ -525,6 +598,18 @@ func (_q *DocumentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Doc
 	if query := _q.withSender; query != nil {
 		if err := _q.loadSender(ctx, query, nodes, nil,
 			func(n *Document, e *Sender) { n.Edges.Sender = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withCreatedByUser; query != nil {
+		if err := _q.loadCreatedByUser(ctx, query, nodes, nil,
+			func(n *Document, e *User) { n.Edges.CreatedByUser = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withUpdatedByUser; query != nil {
+		if err := _q.loadUpdatedByUser(ctx, query, nodes, nil,
+			func(n *Document, e *User) { n.Edges.UpdatedByUser = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -631,6 +716,70 @@ func (_q *DocumentQuery) loadSender(ctx context.Context, query *SenderQuery, nod
 	}
 	return nil
 }
+func (_q *DocumentQuery) loadCreatedByUser(ctx context.Context, query *UserQuery, nodes []*Document, init func(*Document), assign func(*Document, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Document)
+	for i := range nodes {
+		if nodes[i].CreatedBy == nil {
+			continue
+		}
+		fk := *nodes[i].CreatedBy
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "created_by" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *DocumentQuery) loadUpdatedByUser(ctx context.Context, query *UserQuery, nodes []*Document, init func(*Document), assign func(*Document, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Document)
+	for i := range nodes {
+		if nodes[i].UpdatedBy == nil {
+			continue
+		}
+		fk := *nodes[i].UpdatedBy
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "updated_by" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *DocumentQuery) loadDocumentTags(ctx context.Context, query *DocumentTagQuery, nodes []*Document, init func(*Document), assign func(*Document, *DocumentTag)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[uuid.UUID]*Document)
@@ -729,6 +878,12 @@ func (_q *DocumentQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withSender != nil {
 			_spec.Node.AddColumnOnce(document.FieldSenderID)
+		}
+		if _q.withCreatedByUser != nil {
+			_spec.Node.AddColumnOnce(document.FieldCreatedBy)
+		}
+		if _q.withUpdatedByUser != nil {
+			_spec.Node.AddColumnOnce(document.FieldUpdatedBy)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

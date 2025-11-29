@@ -7,6 +7,7 @@ import (
 	"techmind/internal/transport/http/handlers"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 )
 
 type UploadHandler struct {
@@ -36,6 +37,14 @@ func NewUploadHandler(documentService service.DocumentService) *UploadHandler {
 // @Failure      500 {object} handlers.ErrorResponse "Внутренняя ошибка сервера"
 // @Router       /private/documents [post]
 func (h *UploadHandler) Handle(c fiber.Ctx) error {
+	// Получаем user_id из контекста (установлено JWT middleware)
+	userID, ok := c.Locals("user_id").(uuid.UUID)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(handlers.ErrorResponse{
+			Error: "unauthorized",
+		})
+	}
+
 	var req UploadRequest
 	if err := c.Bind().Form(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(handlers.ErrorResponse{
@@ -66,7 +75,10 @@ func (h *UploadHandler) Handle(c fiber.Ctx) error {
 		FileSize:  file.Size,
 		MimeType:  file.Header.Get("Content-Type"),
 		SenderID:  req.SenderID,
+		UserID:    userID,
 	}
+
+	// ...existing code...
 
 	document, err := h.documentService.Upload(c.Context(), input)
 	if err != nil {
@@ -91,6 +103,9 @@ func (h *UploadHandler) Handle(c fiber.Ctx) error {
 		FileSize:        document.FileSize,
 		MimeType:        document.MimeType,
 		Checksum:        document.Checksum,
+		CreatedBy:       document.CreatedBy,
+		UpdatedBy:       document.UpdatedBy,
 		CreatedAt:       document.CreatedAt,
+		UpdatedAt:       document.UpdatedAt,
 	})
 }

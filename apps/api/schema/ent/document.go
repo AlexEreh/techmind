@@ -9,6 +9,7 @@ import (
 	"techmind/schema/ent/document"
 	"techmind/schema/ent/folder"
 	"techmind/schema/ent/sender"
+	"techmind/schema/ent/user"
 	"time"
 
 	"entgo.io/ent"
@@ -39,8 +40,14 @@ type Document struct {
 	Checksum string `json:"checksum,omitempty"`
 	// SenderID holds the value of the "sender_id" field.
 	SenderID *uuid.UUID `json:"sender_id,omitempty"`
+	// CreatedBy holds the value of the "created_by" field.
+	CreatedBy *uuid.UUID `json:"created_by,omitempty"`
+	// UpdatedBy holds the value of the "updated_by" field.
+	UpdatedBy *uuid.UUID `json:"updated_by,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DocumentQuery when eager-loading is set.
 	Edges        DocumentEdges `json:"edges"`
@@ -55,11 +62,15 @@ type DocumentEdges struct {
 	Folder *Folder `json:"folder,omitempty"`
 	// Sender holds the value of the sender edge.
 	Sender *Sender `json:"sender,omitempty"`
+	// CreatedByUser holds the value of the created_by_user edge.
+	CreatedByUser *User `json:"created_by_user,omitempty"`
+	// UpdatedByUser holds the value of the updated_by_user edge.
+	UpdatedByUser *User `json:"updated_by_user,omitempty"`
 	// DocumentTags holds the value of the document_tags edge.
 	DocumentTags []*DocumentTag `json:"document_tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [6]bool
 }
 
 // CompanyOrErr returns the Company value or an error if the edge
@@ -95,10 +106,32 @@ func (e DocumentEdges) SenderOrErr() (*Sender, error) {
 	return nil, &NotLoadedError{edge: "sender"}
 }
 
+// CreatedByUserOrErr returns the CreatedByUser value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e DocumentEdges) CreatedByUserOrErr() (*User, error) {
+	if e.CreatedByUser != nil {
+		return e.CreatedByUser, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "created_by_user"}
+}
+
+// UpdatedByUserOrErr returns the UpdatedByUser value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e DocumentEdges) UpdatedByUserOrErr() (*User, error) {
+	if e.UpdatedByUser != nil {
+		return e.UpdatedByUser, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "updated_by_user"}
+}
+
 // DocumentTagsOrErr returns the DocumentTags value or an error if the edge
 // was not loaded in eager-loading.
 func (e DocumentEdges) DocumentTagsOrErr() ([]*DocumentTag, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[5] {
 		return e.DocumentTags, nil
 	}
 	return nil, &NotLoadedError{edge: "document_tags"}
@@ -109,13 +142,13 @@ func (*Document) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case document.FieldFolderID, document.FieldSenderID:
+		case document.FieldFolderID, document.FieldSenderID, document.FieldCreatedBy, document.FieldUpdatedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case document.FieldFileSize:
 			values[i] = new(sql.NullInt64)
 		case document.FieldName, document.FieldFilePath, document.FieldPreviewFilePath, document.FieldMimeType, document.FieldChecksum:
 			values[i] = new(sql.NullString)
-		case document.FieldCreatedAt:
+		case document.FieldCreatedAt, document.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case document.FieldID, document.FieldCompanyID:
 			values[i] = new(uuid.UUID)
@@ -197,11 +230,31 @@ func (_m *Document) assignValues(columns []string, values []any) error {
 				_m.SenderID = new(uuid.UUID)
 				*_m.SenderID = *value.S.(*uuid.UUID)
 			}
+		case document.FieldCreatedBy:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field created_by", values[i])
+			} else if value.Valid {
+				_m.CreatedBy = new(uuid.UUID)
+				*_m.CreatedBy = *value.S.(*uuid.UUID)
+			}
+		case document.FieldUpdatedBy:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_by", values[i])
+			} else if value.Valid {
+				_m.UpdatedBy = new(uuid.UUID)
+				*_m.UpdatedBy = *value.S.(*uuid.UUID)
+			}
 		case document.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
+			}
+		case document.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				_m.UpdatedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -229,6 +282,16 @@ func (_m *Document) QueryFolder() *FolderQuery {
 // QuerySender queries the "sender" edge of the Document entity.
 func (_m *Document) QuerySender() *SenderQuery {
 	return NewDocumentClient(_m.config).QuerySender(_m)
+}
+
+// QueryCreatedByUser queries the "created_by_user" edge of the Document entity.
+func (_m *Document) QueryCreatedByUser() *UserQuery {
+	return NewDocumentClient(_m.config).QueryCreatedByUser(_m)
+}
+
+// QueryUpdatedByUser queries the "updated_by_user" edge of the Document entity.
+func (_m *Document) QueryUpdatedByUser() *UserQuery {
+	return NewDocumentClient(_m.config).QueryUpdatedByUser(_m)
 }
 
 // QueryDocumentTags queries the "document_tags" edge of the Document entity.
@@ -292,8 +355,21 @@ func (_m *Document) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
+	if v := _m.CreatedBy; v != nil {
+		builder.WriteString("created_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.UpdatedBy; v != nil {
+		builder.WriteString("updated_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
