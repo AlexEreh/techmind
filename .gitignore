@@ -5,3 +5,4 @@ prod.yml
 example.json
 example.csv
 apps/api/bin/**
+.idea/

@@ -119,6 +119,11 @@ type DocumentService interface {
 	// Поддерживает конвертацию Office документов (docx, xlsx, pptx и т.д.) через Gotenberg
 	// После успешной конвертации обновляет ссылку на preview в базе данных
 	GeneratePDFPreview(ctx context.Context, documentID uuid.UUID) error
+
+	// ExtractAndIndexText извлекает текст из документа и индексирует его в Elasticsearch
+	// Использует docconv для извлечения текста из различных форматов документов
+	// Сохраняет извлеченный текст в индекс "documents" в Elasticsearch
+	ExtractAndIndexText(ctx context.Context, documentID uuid.UUID) error
 }
 
 // DocumentTagService определяет интерфейс для работы с тегами документов

@@ -12,9 +12,9 @@ import (
 
 func New(lc fx.Lifecycle, cfg *config.Config) *gotenberg.Client {
 	// Если Gotenberg отключен, возвращаем nil
-	if !cfg.Gotenberg.Enabled {
-		return nil
-	}
+	//if !cfg.Gotenberg.Enabled {
+	//	return nil
+	//}
 
 	// Устанавливаем таймаут (по умолчанию 60 секунд)
 	timeout := 60 * time.Second

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -15,6 +16,9 @@ import (
 	"techmind/pkg/gotenberg"
 	"techmind/schema/ent"
 
+	"code.sajari.com/docconv/v2/client"
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 )
@@ -92,14 +96,14 @@ var AllowedExtensions = map[string]bool{
 }
 
 type documentService struct {
-	documentRepo     repo.DocumentRepository
-	documentTagRepo  repo.DocumentTagRepository
-	tagRepo          repo.TagRepository
-	folderRepo       repo.FolderRepository
-	minioClient      *minio.Client
-	bucketName       string
-	gotenbergClient  *gotenberg.Client
-	gotenbergEnabled bool
+	documentRepo        repo.DocumentRepository
+	documentTagRepo     repo.DocumentTagRepository
+	tagRepo             repo.TagRepository
+	folderRepo          repo.FolderRepository
+	minioClient         *minio.Client
+	bucketName          string
+	gotenbergClient     *gotenberg.Client
+	elasticsearchClient *elasticsearch.Client
 }
 
 func NewService(
@@ -109,18 +113,18 @@ func NewService(
 	folderRepo repo.FolderRepository,
 	minioClient *minio.Client,
 	gotenbergClient *gotenberg.Client,
+	elasticsearchClient *elasticsearch.Client,
 ) service.DocumentService {
-	gotenbergEnabled := gotenbergClient != nil
 
 	return &documentService{
-		documentRepo:     documentRepo,
-		documentTagRepo:  documentTagRepo,
-		tagRepo:          tagRepo,
-		folderRepo:       folderRepo,
-		minioClient:      minioClient,
-		bucketName:       "documents",
-		gotenbergClient:  gotenbergClient,
-		gotenbergEnabled: gotenbergEnabled,
+		documentRepo:        documentRepo,
+		documentTagRepo:     documentTagRepo,
+		tagRepo:             tagRepo,
+		folderRepo:          folderRepo,
+		minioClient:         minioClient,
+		bucketName:          "documents",
+		gotenbergClient:     gotenbergClient,
+		elasticsearchClient: elasticsearchClient,
 	}
 }
 
@@ -187,10 +191,45 @@ func (s *documentService) Upload(ctx context.Context, input service.DocumentUplo
 	if err != nil {
 		// Удаляем файл из MinIO если не удалось создать запись в БД
 		_ = s.minioClient.RemoveObject(ctx, s.bucketName, objectName, minio.RemoveObjectOptions{})
+
+		// Проверяем на конфликт уникальности checksum
+		if ent.IsConstraintError(err) {
+			return nil, fmt.Errorf("document with this checksum already exists")
+		}
+
 		return nil, fmt.Errorf("failed to create document record: %w", err)
 	}
 
-	// TODO: Генерация preview для поддерживаемых типов файлов скорее всего в микросервисе (kafka - посредник, без grpc)
+	// Генерация preview для поддерживаемых типов файлов
+	if s.isConvertibleToPDF(input.MimeType) {
+		// Запускаем генерацию preview асинхронно, чтобы не блокировать загрузку
+		go func() {
+			// Создаем новый контекст с таймаутом для фоновой задачи
+			previewCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+
+			if err := s.GeneratePDFPreview(previewCtx, document.ID); err != nil {
+				// Логируем ошибку, но не прерываем процесс загрузки
+				// В продакшене здесь должно быть логирование через logger
+				fmt.Printf("Failed to generate preview for document %s: %v\n", document.ID, err)
+			}
+		}()
+	}
+
+	// Извлечение текста и индексация в Elasticsearch
+	if s.isExtractableText(input.MimeType) {
+		// Запускаем извлечение текста асинхронно
+		go func() {
+			// Создаем новый контекст с таймаутом для фоновой задачи
+			extractCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+
+			if err := s.ExtractAndIndexText(extractCtx, document.ID); err != nil {
+				// Логируем ошибку, но не прерываем процесс загрузки
+				fmt.Printf("Failed to extract and index text for document %s: %v\n", document.ID, err)
+			}
+		}()
+	}
 
 	return document, nil
 }
@@ -368,20 +407,41 @@ func (s *documentService) GetPreviewURL(ctx context.Context, documentID uuid.UUI
 }
 
 func (s *documentService) Search(ctx context.Context, companyID uuid.UUID, query string, folderID *uuid.UUID, tagIDs []uuid.UUID) ([]*service.DocumentWithTags, error) {
-	// TODO: Реализовать поиск через Elasticsearch
-	// Пока используем простую фильтрацию через БД
-
 	var documents []*ent.Document
 	var err error
 
-	if folderID != nil {
-		documents, err = s.documentRepo.ListByFolder(ctx, *folderID)
-	} else {
-		documents, err = s.documentRepo.ListByCompany(ctx, companyID)
-	}
+	// Если есть поисковый запрос, используем ТОЛЬКО Elasticsearch для полнотекстового поиска
+	if query != "" {
+		if s.elasticsearchClient == nil {
+			return nil, fmt.Errorf("elasticsearch is not configured")
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to search documents: %w", err)
+		documentIDs, err := s.searchInElasticsearch(ctx, companyID, query, folderID)
+		if err != nil {
+			return nil, fmt.Errorf("elasticsearch search failed: %w", err)
+		}
+
+		// Если ничего не найдено в Elasticsearch, возвращаем пустой результат
+		if len(documentIDs) == 0 {
+			return []*service.DocumentWithTags{}, nil
+		}
+
+		// Получаем документы по ID из Elasticsearch
+		documents, err = s.getDocumentsByIDs(ctx, documentIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get documents: %w", err)
+		}
+	} else {
+		// Если запрос пустой, получаем все документы компании/папки
+		if folderID != nil {
+			documents, err = s.documentRepo.ListByFolder(ctx, *folderID)
+		} else {
+			documents, err = s.documentRepo.ListByCompany(ctx, companyID)
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to get documents: %w", err)
+		}
 	}
 
 	// Фильтруем по тегам если указаны
@@ -412,6 +472,143 @@ func (s *documentService) Search(ctx context.Context, companyID uuid.UUID, query
 	}
 
 	return result, nil
+}
+
+// searchInElasticsearch выполняет полнотекстовой поиск в Elasticsearch
+func (s *documentService) searchInElasticsearch(ctx context.Context, companyID uuid.UUID, query string, folderID *uuid.UUID) ([]uuid.UUID, error) {
+	// Строим фильтры (must) - обязательные условия
+	must := []map[string]interface{}{
+		{
+			"term": map[string]interface{}{
+				"company_id": companyID.String(),
+			},
+		},
+	}
+
+	// Добавляем фильтр по папке, если указана
+	if folderID != nil {
+		must = append(must, map[string]interface{}{
+			"term": map[string]interface{}{
+				"folder_id": folderID.String(),
+			},
+		})
+	}
+
+	// Полнотекстовый поиск по имени и содержимому документа
+	should := []map[string]interface{}{
+		{
+			"match": map[string]interface{}{
+				"name": map[string]interface{}{
+					"query": query,
+					"boost": 2.0, // Повышаем релевантность совпадений в имени
+				},
+			},
+		},
+		{
+			"match": map[string]interface{}{
+				"text": map[string]interface{}{
+					"query": query,
+				},
+			},
+		},
+	}
+
+	searchQuery := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must":                 must,
+				"should":               should,
+				"minimum_should_match": 1,
+			},
+		},
+		"size": 1000, // Максимальное количество результатов
+	}
+
+	// Сериализуем запрос в JSON
+	queryJSON, err := json.Marshal(searchQuery)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal search query: %w", err)
+	}
+
+	// Логируем запрос для отладки
+	fmt.Printf("Elasticsearch query: %s\n", string(queryJSON))
+
+	// Выполняем поиск
+	res, err := s.elasticsearchClient.Search(
+		s.elasticsearchClient.Search.WithContext(ctx),
+		s.elasticsearchClient.Search.WithIndex("documents"),
+		s.elasticsearchClient.Search.WithBody(bytes.NewReader(queryJSON)),
+		s.elasticsearchClient.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("elasticsearch search request failed: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		bodyBytes, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("elasticsearch search error: %s", string(bodyBytes))
+	}
+
+	// Парсим результаты
+	var result map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to parse elasticsearch response: %w", err)
+	}
+
+	// Извлекаем ID документов из результатов
+	hits, ok := result["hits"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid elasticsearch response format")
+	}
+
+	hitsArray, ok := hits["hits"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid elasticsearch hits format")
+	}
+
+	fmt.Printf("Elasticsearch found %d documents\n", len(hitsArray))
+
+	documentIDs := make([]uuid.UUID, 0, len(hitsArray))
+	for _, hit := range hitsArray {
+		hitMap, ok := hit.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		source, ok := hitMap["_source"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		docIDStr, ok := source["document_id"].(string)
+		if !ok {
+			continue
+		}
+
+		docID, err := uuid.Parse(docIDStr)
+		if err != nil {
+			continue
+		}
+
+		documentIDs = append(documentIDs, docID)
+	}
+
+	return documentIDs, nil
+}
+
+// getDocumentsByIDs получает документы по списку ID
+func (s *documentService) getDocumentsByIDs(ctx context.Context, ids []uuid.UUID) ([]*ent.Document, error) {
+	documents := make([]*ent.Document, 0, len(ids))
+	for _, id := range ids {
+		doc, err := s.documentRepo.GetByID(ctx, id)
+		if err != nil {
+			// Пропускаем документы, которые не удалось получить
+			continue
+		}
+		documents = append(documents, doc)
+	}
+	return documents, nil
 }
 
 func (s *documentService) getDocumentTags(ctx context.Context, documentID uuid.UUID) ([]*ent.Tag, error) {
@@ -453,9 +650,9 @@ func (s *documentService) hasAllTags(docTags []*ent.Tag, tagIDs []uuid.UUID) boo
 // После успешной конвертации обновляет ссылку на preview в базе данных
 func (s *documentService) GeneratePDFPreview(ctx context.Context, documentID uuid.UUID) error {
 	// Проверяем что Gotenberg доступен
-	if !s.gotenbergEnabled || s.gotenbergClient == nil {
-		return fmt.Errorf("gotenberg is not enabled or configured")
-	}
+	//if !s.gotenbergEnabled || s.gotenbergClient == nil {
+	//	return fmt.Errorf("gotenberg is not enabled or configured")
+	//}
 
 	// Получаем документ из БД
 	document, err := s.documentRepo.GetByID(ctx, documentID)
@@ -595,6 +792,183 @@ func (s *documentService) isOfficeDocument(mimeType string) bool {
 
 	for _, ot := range officeTypes {
 		if strings.EqualFold(mimeType, ot) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// ExtractAndIndexText извлекает текст из документа и индексирует его в Elasticsearch
+// Использует docconv для извлечения текста из различных форматов документов
+// Сохраняет извлеченный текст в индекс "documents" в Elasticsearch
+func (s *documentService) ExtractAndIndexText(ctx context.Context, documentID uuid.UUID) error {
+	// Получаем документ из БД
+	document, err := s.documentRepo.GetByID(ctx, documentID)
+	if err != nil {
+		return fmt.Errorf("document not found: %w", err)
+	}
+
+	// Проверяем что документ поддерживает извлечение текста
+	if !s.isExtractableText(document.MimeType) {
+		return fmt.Errorf("document type %s does not support text extraction", document.MimeType)
+	}
+
+	// Скачиваем оригинальный файл из MinIO
+	object, err := s.minioClient.GetObject(ctx, s.bucketName, document.FilePath, minio.GetObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get file from minio: %w", err)
+	}
+	defer object.Close()
+
+	// Извлекаем текст с помощью docconv
+	c := client.New()
+	convRes, err := c.Convert(object, document.Name)
+	if err != nil {
+		return fmt.Errorf("failed to extract text from document: %w", err)
+	}
+
+	// Очищаем текст от лишних пробелов и переносов строк
+	extractedText := strings.TrimSpace(convRes.Body)
+	if extractedText == "" {
+		return fmt.Errorf("no text extracted from document")
+	}
+
+	// Подготавливаем документ для индексации в Elasticsearch
+	// Индекс: documents
+	// ID документа: UUID документа
+	esDocument := map[string]interface{}{
+		"document_id": document.ID.String(),
+		"company_id":  document.CompanyID.String(),
+		"folder_id":   nil,
+		"name":        document.Name,
+		"text":        extractedText,
+		"mime_type":   document.MimeType,
+		"file_size":   document.FileSize,
+		"indexed_at":  time.Now().Format(time.RFC3339),
+	}
+
+	if document.FolderID != nil {
+		esDocument["folder_id"] = document.FolderID.String()
+	}
+
+	// Сериализуем в JSON
+	docJSON, err := json.Marshal(esDocument)
+	if err != nil {
+		return fmt.Errorf("failed to marshal document for elasticsearch: %w", err)
+	}
+	// Индексируем документ в Elasticsearch
+	req := esapi.IndexRequest{
+		Index:      "documents",
+		DocumentID: document.ID.String(),
+		Body:       bytes.NewReader(docJSON),
+		Refresh:    "true",
+	}
+
+	esRes, err := req.Do(ctx, s.elasticsearchClient)
+	if err != nil {
+		return fmt.Errorf("failed to index document in elasticsearch: %w", err)
+	}
+	defer esRes.Body.Close()
+
+	if esRes.IsError() {
+		return fmt.Errorf("elasticsearch indexing error: %s", esRes.String())
+	}
+
+	fmt.Printf("Successfully indexed document %s in Elasticsearch index 'documents'\n", document.ID)
+
+	// Автоматическое добавление тегов на основе содержимого документа
+	if err := s.autoAssignTags(ctx, document, extractedText); err != nil {
+		// Логируем ошибку, но не прерываем процесс индексации
+		fmt.Printf("Failed to auto-assign tags for document %s: %v\n", document.ID, err)
+	}
+
+	return nil
+}
+
+// autoAssignTags автоматически присваивает теги документу на основе содержимого текста
+// Получает все теги компании и проверяет их наличие в тексте документа (case-insensitive)
+// Если название тега найдено в тексте, тег автоматически добавляется к документу
+func (s *documentService) autoAssignTags(ctx context.Context, document *ent.Document, text string) error {
+	// Получаем все теги компании
+	tags, err := s.tagRepo.ListByCompany(ctx, document.CompanyID)
+	if err != nil {
+		return fmt.Errorf("failed to get company tags: %w", err)
+	}
+
+	if len(tags) == 0 {
+		return nil // Нет тегов для присвоения
+	}
+
+	// Приводим текст к нижнему регистру для поиска без учета регистра
+	lowerText := strings.ToLower(text)
+
+	// Проверяем каждый тег
+	assignedCount := 0
+	for _, tag := range tags {
+		// Приводим название тега к нижнему регистру
+		lowerTagName := strings.ToLower(tag.Name)
+
+		// Проверяем наличие тега в тексте
+		if strings.Contains(lowerText, lowerTagName) {
+			// Пытаемся добавить тег к документу
+			_, err := s.documentTagRepo.Create(ctx, document.ID, tag.ID)
+			if err != nil {
+				// Если тег уже добавлен или произошла другая ошибка, продолжаем
+				// В продакшене здесь должно быть логирование
+				fmt.Printf("Failed to assign tag '%s' to document %s: %v\n", tag.Name, document.ID, err)
+				continue
+			}
+			assignedCount++
+			fmt.Printf("Auto-assigned tag '%s' to document %s\n", tag.Name, document.ID)
+		}
+	}
+
+	if assignedCount > 0 {
+		fmt.Printf("Successfully auto-assigned %d tag(s) to document %s\n", assignedCount, document.ID)
+	}
+
+	return nil
+}
+
+// isExtractableText проверяет, можно ли извлечь текст из документа
+func (s *documentService) isExtractableText(mimeType string) bool {
+	extractableTypes := []string{
+		// PDF
+		"application/pdf",
+
+		// Microsoft Office
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",   // docx
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",         // xlsx
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation", // pptx
+		"application/msword",            // doc
+		"application/vnd.ms-excel",      // xls
+		"application/vnd.ms-powerpoint", // ppt
+
+		// OpenDocument
+		"application/vnd.oasis.opendocument.text",         // odt
+		"application/vnd.oasis.opendocument.spreadsheet",  // ods
+		"application/vnd.oasis.opendocument.presentation", // odp
+
+		// Rich Text
+		"application/rtf",
+		"text/rtf",
+
+		// Plain text
+		"text/plain",
+		"text/csv",
+
+		// HTML
+		"text/html",
+
+		// Images (если docconv поддерживает OCR)
+		"image/jpeg",
+		"image/png",
+		"image/tiff",
+	}
+
+	for _, et := range extractableTypes {
+		if strings.EqualFold(mimeType, et) {
 			return true
 		}
 	}

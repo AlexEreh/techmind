@@ -26,10 +26,10 @@ export default function SelectCompanyPage() {
       return;
     }
 
-    // Если компания уже выбрана, перенаправляем на файлы
-    if (currentCompany) {
-      router.push('/files');
-    }
+    // Если компания уже выбрана и мы уже инициализировались, перенаправляем на файлы
+    // if (currentCompany) {
+    //   router.push('/files');
+    // }
   }, [user, currentCompany, authLoading, router]);
 
   const handleSelectCompany = async (companyId: string) => {
@@ -76,7 +76,12 @@ export default function SelectCompanyPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex items-center justify-center min-h-screen bg-background p-4"  style={{
+        backgroundImage: 'url("/bgsel.png")',
+        backgroundSize: "100% 100%",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+    }}>
       <Card className="w-full max-w-2xl">
         <CardHeader className="flex flex-col gap-1 items-center pt-6">
           <h1 className="text-2xl font-bold">Выберите компанию</h1>
@@ -95,7 +100,7 @@ export default function SelectCompanyPage() {
                 Создайте новую компанию или попросите администратора пригласить вас
               </p>
               <Button
-                color="primary"
+                color="default"
                 startContent={<PlusIcon />}
                 onPress={onOpen}
                 size="lg"
@@ -108,7 +113,7 @@ export default function SelectCompanyPage() {
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-semibold">Ваши компании</h3>
                 <Button
-                  color="primary"
+                  color="default"
                   variant="flat"
                   startContent={<PlusIcon />}
                   onPress={onOpen}
@@ -132,12 +137,12 @@ export default function SelectCompanyPage() {
                         <p className="text-sm text-default-400">ID: {company.id}</p>
                       </div>
                       <Button
-                        color="primary"
+                        color="default"
                         variant="flat"
                         onPress={() => handleSelectCompany(company.id)}
                         isLoading={isLoading}
                       >
-                        Выбрать
+                          Выбрать
                       </Button>
                     </CardBody>
                   </Card>
@@ -173,7 +178,7 @@ export default function SelectCompanyPage() {
               Отмена
             </Button>
             <Button
-              color="primary"
+              color="default"
               onPress={handleCreateCompany}
               isLoading={isCreating}
               isDisabled={!newCompanyName.trim()}

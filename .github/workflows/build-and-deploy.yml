@@ -3,9 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main
-      - eba
-      - ebaba
+      - release
   workflow_dispatch:
 
 permissions:
