@@ -23,6 +23,7 @@ var (
 	CompanyUsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "role", Type: field.TypeInt},
+		{Name: "added_at", Type: field.TypeTime},
 		{Name: "company_id", Type: field.TypeUUID},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
@@ -34,13 +35,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "company_users_companies_company_users",
-				Columns:    []*schema.Column{CompanyUsersColumns[2]},
+				Columns:    []*schema.Column{CompanyUsersColumns[3]},
 				RefColumns: []*schema.Column{CompaniesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "company_users_users_company_users",
-				Columns:    []*schema.Column{CompanyUsersColumns[3]},
+				Columns:    []*schema.Column{CompanyUsersColumns[4]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -132,12 +133,21 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "name", Type: field.TypeString},
 		{Name: "email", Type: field.TypeString, Nullable: true},
+		{Name: "company_id", Type: field.TypeUUID},
 	}
 	// SendersTable holds the schema information for the "senders" table.
 	SendersTable = &schema.Table{
 		Name:       "senders",
 		Columns:    SendersColumns,
 		PrimaryKey: []*schema.Column{SendersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "senders_companies_senders",
+				Columns:    []*schema.Column{SendersColumns[3]},
+				RefColumns: []*schema.Column{CompaniesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
@@ -245,6 +255,7 @@ func init() {
 	DocumentsTable.ForeignKeys[2].RefTable = SendersTable
 	FoldersTable.ForeignKeys[0].RefTable = CompaniesTable
 	FoldersTable.ForeignKeys[1].RefTable = FoldersTable
+	SendersTable.ForeignKeys[0].RefTable = CompaniesTable
 	TagsTable.ForeignKeys[0].RefTable = CompaniesTable
 	DocumentDocumentTagsTable.ForeignKeys[0].RefTable = DocumentsTable
 	DocumentDocumentTagsTable.ForeignKeys[1].RefTable = DocumentTagsTable

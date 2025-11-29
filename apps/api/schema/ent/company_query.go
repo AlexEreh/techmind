@@ -12,6 +12,7 @@ import (
 	"techmind/schema/ent/document"
 	"techmind/schema/ent/folder"
 	"techmind/schema/ent/predicate"
+	"techmind/schema/ent/sender"
 	"techmind/schema/ent/tag"
 
 	"entgo.io/ent"
@@ -32,6 +33,7 @@ type CompanyQuery struct {
 	withFolders      *FolderQuery
 	withDocuments    *DocumentQuery
 	withTags         *TagQuery
+	withSenders      *SenderQuery
 	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -150,6 +152,28 @@ func (_q *CompanyQuery) QueryTags() *TagQuery {
 			sqlgraph.From(company.Table, company.FieldID, selector),
 			sqlgraph.To(tag.Table, tag.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, company.TagsTable, company.TagsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySenders chains the current query on the "senders" edge.
+func (_q *CompanyQuery) QuerySenders() *SenderQuery {
+	query := (&SenderClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(company.Table, company.FieldID, selector),
+			sqlgraph.To(sender.Table, sender.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, company.SendersTable, company.SendersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -353,6 +377,7 @@ func (_q *CompanyQuery) Clone() *CompanyQuery {
 		withFolders:      _q.withFolders.Clone(),
 		withDocuments:    _q.withDocuments.Clone(),
 		withTags:         _q.withTags.Clone(),
+		withSenders:      _q.withSenders.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -401,6 +426,17 @@ func (_q *CompanyQuery) WithTags(opts ...func(*TagQuery)) *CompanyQuery {
 		opt(query)
 	}
 	_q.withTags = query
+	return _q
+}
+
+// WithSenders tells the query-builder to eager-load the nodes that are connected to
+// the "senders" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *CompanyQuery) WithSenders(opts ...func(*SenderQuery)) *CompanyQuery {
+	query := (&SenderClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSenders = query
 	return _q
 }
 
@@ -482,11 +518,12 @@ func (_q *CompanyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Comp
 	var (
 		nodes       = []*Company{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withCompanyUsers != nil,
 			_q.withFolders != nil,
 			_q.withDocuments != nil,
 			_q.withTags != nil,
+			_q.withSenders != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -535,6 +572,13 @@ func (_q *CompanyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Comp
 		if err := _q.loadTags(ctx, query, nodes,
 			func(n *Company) { n.Edges.Tags = []*Tag{} },
 			func(n *Company, e *Tag) { n.Edges.Tags = append(n.Edges.Tags, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSenders; query != nil {
+		if err := _q.loadSenders(ctx, query, nodes,
+			func(n *Company) { n.Edges.Senders = []*Sender{} },
+			func(n *Company, e *Sender) { n.Edges.Senders = append(n.Edges.Senders, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -646,6 +690,36 @@ func (_q *CompanyQuery) loadTags(ctx context.Context, query *TagQuery, nodes []*
 	}
 	query.Where(predicate.Tag(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(company.TagsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CompanyID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "company_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *CompanyQuery) loadSenders(ctx context.Context, query *SenderQuery, nodes []*Company, init func(*Company), assign func(*Company, *Sender)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Company)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sender.FieldCompanyID)
+	}
+	query.Where(predicate.Sender(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(company.SendersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

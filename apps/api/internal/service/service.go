@@ -152,6 +152,24 @@ type DocumentTagService interface {
 	UpdateTag(ctx context.Context, tagID uuid.UUID, name string) (*ent.Tag, error)
 }
 
+// SenderService определяет интерфейс для работы с контрагентами (отправителями)
+type SenderService interface {
+	// Create создает нового контрагента
+	Create(ctx context.Context, companyID uuid.UUID, name string, email *string) (*ent.Sender, error)
+
+	// GetByID получает контрагента по ID
+	GetByID(ctx context.Context, id uuid.UUID) (*ent.Sender, error)
+
+	// Update обновляет данные контрагента
+	Update(ctx context.Context, id uuid.UUID, name string, email *string) (*ent.Sender, error)
+
+	// Delete удаляет контрагента
+	Delete(ctx context.Context, id uuid.UUID) error
+
+	// GetByCompany получает всех контрагентов компании
+	GetByCompany(ctx context.Context, companyID uuid.UUID) ([]*ent.Sender, error)
+}
+
 // CompanyUserService определяет интерфейс для работы с пользователями компании
 type CompanyUserService interface {
 	// GetUserRole получает роль пользователя в конкретной компании
@@ -159,6 +177,9 @@ type CompanyUserService interface {
 
 	// GetUserCompanies получает список всех компаний пользователя с информацией о ролях
 	GetUserCompanies(ctx context.Context, userID uuid.UUID) ([]*ent.CompanyUser, error)
+
+	// GetCompanyUsers получает список всех пользователей компании с информацией о пользователях
+	GetCompanyUsers(ctx context.Context, companyID uuid.UUID) ([]*ent.CompanyUser, error)
 }
 
 // CompanyService определяет интерфейс для работы с компаниями

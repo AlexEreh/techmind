@@ -42,6 +42,7 @@ func (r *documentRepo) GetByID(ctx context.Context, id uuid.UUID) (*ent.Document
 	return r.client.Document.
 		Query().
 		Where(document.ID(id)).
+		WithSender().
 		Only(ctx)
 }
 
@@ -84,6 +85,7 @@ func (r *documentRepo) ListByCompany(ctx context.Context, companyID uuid.UUID) (
 	return r.client.Document.
 		Query().
 		Where(document.CompanyID(companyID)).
+		WithSender().
 		All(ctx)
 }
 
@@ -91,5 +93,6 @@ func (r *documentRepo) ListByFolder(ctx context.Context, folderID uuid.UUID) ([]
 	return r.client.Document.
 		Query().
 		Where(document.FolderID(folderID)).
+		WithSender().
 		All(ctx)
 }

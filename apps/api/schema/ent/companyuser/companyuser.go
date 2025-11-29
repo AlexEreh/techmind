@@ -3,6 +3,8 @@
 package companyuser
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
@@ -19,6 +21,8 @@ const (
 	FieldCompanyID = "company_id"
 	// FieldRole holds the string denoting the role field in the database.
 	FieldRole = "role"
+	// FieldAddedAt holds the string denoting the added_at field in the database.
+	FieldAddedAt = "added_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeCompany holds the string denoting the company edge name in mutations.
@@ -47,6 +51,7 @@ var Columns = []string{
 	FieldUserID,
 	FieldCompanyID,
 	FieldRole,
+	FieldAddedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -60,6 +65,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultAddedAt holds the default value on creation for the "added_at" field.
+	DefaultAddedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -85,6 +92,11 @@ func ByCompanyID(opts ...sql.OrderTermOption) OrderOption {
 // ByRole orders the results by the role field.
 func ByRole(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRole, opts...).ToFunc()
+}
+
+// ByAddedAt orders the results by the added_at field.
+func ByAddedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAddedAt, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

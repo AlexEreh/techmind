@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -21,6 +23,9 @@ func (CompanyUser) Fields() []ent.Field {
 		field.UUID("user_id", uuid.UUID{}),
 		field.UUID("company_id", uuid.UUID{}),
 		field.Int("role"),
+		field.Time("added_at").
+			Default(time.Now).
+			Immutable(),
 	}
 }
 

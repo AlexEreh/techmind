@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+
+	"go.uber.org/zap"
+
 	"techmind/pkg/config"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -112,11 +115,13 @@ func initializeElasticsearchIndex(client *elasticsearch.Client) {
 
 	res, err := client.Indices.Create(indexName, client.Indices.Create.WithBody(bytes.NewReader(body)))
 	if err != nil {
+		zap.L().Error("Failed to create Elasticsearch index", zap.Error(err))
 		panic(err)
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
+		zap.L().Error("Failed to create Elasticsearch index", zap.Error(err))
 		panic("Failed to create Elasticsearch index")
 	}
 }

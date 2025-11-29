@@ -16,20 +16,24 @@ type UploadRequest struct {
 
 // DocumentResponse представляет данные документа
 type DocumentResponse struct {
-	ID              uuid.UUID  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	CompanyID       uuid.UUID  `json:"company_id" example:"550e8400-e29b-41d4-a716-446655440001"`
-	FolderID        *uuid.UUID `json:"folder_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440002"`
-	SenderID        *uuid.UUID `json:"sender_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440003"`
-	Name            string     `json:"name" example:"document.pdf"`
-	FilePath        string     `json:"file_path" example:"documents/550e8400-e29b-41d4-a716-446655440000.pdf"`
-	PreviewFilePath *string    `json:"preview_file_path,omitempty" example:"previews/550e8400-e29b-41d4-a716-446655440000.jpg"`
-	FileSize        int64      `json:"file_size" example:"1024000"`
-	MimeType        string     `json:"mime_type" example:"application/pdf"`
-	Checksum        string     `json:"checksum" example:"abc123def456"`
-	CreatedAt       time.Time  `json:"created_at" example:"2024-11-28T15:04:05Z"`
-	Tags            []TagData  `json:"tags,omitempty"`
-	PreviewURL      string     `json:"preview_url,omitempty" example:"https://minio.example.com/bucket/preview.jpg?token=..."`
-	DownloadURL     string     `json:"download_url,omitempty" example:"https://minio.example.com/bucket/document.pdf?token=..."`
+	ID              uuid.UUID   `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	CompanyID       uuid.UUID   `json:"company_id" example:"550e8400-e29b-41d4-a716-446655440001"`
+	FolderID        *uuid.UUID  `json:"folder_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440002"`
+	SenderID        *uuid.UUID  `json:"sender_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440003"`
+	Sender          *SenderData `json:"sender,omitempty"`
+	Name            string      `json:"name" example:"document.pdf"`
+	FilePath        string      `json:"file_path" example:"documents/550e8400-e29b-41d4-a716-446655440000.pdf"`
+	PreviewFilePath *string     `json:"preview_file_path,omitempty" example:"previews/550e8400-e29b-41d4-a716-446655440000.jpg"`
+	FileSize        int64       `json:"file_size" example:"1024000"`
+	MimeType        string      `json:"mime_type" example:"application/pdf"`
+	Checksum        string      `json:"checksum" example:"abc123def456"`
+	CreatedBy       *uuid.UUID  `json:"created_by,omitempty" example:"550e8400-e29b-41d4-a716-446655440004"`
+	UpdatedBy       *uuid.UUID  `json:"updated_by,omitempty" example:"550e8400-e29b-41d4-a716-446655440005"`
+	CreatedAt       time.Time   `json:"created_at" example:"2024-11-28T15:04:05Z"`
+	UpdatedAt       time.Time   `json:"updated_at" example:"2024-11-28T15:04:05Z"`
+	Tags            []TagData   `json:"tags,omitempty"`
+	PreviewURL      string      `json:"preview_url,omitempty" example:"https://minio.example.com/bucket/preview.jpg?token=..."`
+	DownloadURL     string      `json:"download_url,omitempty" example:"https://minio.example.com/bucket/document.pdf?token=..."`
 }
 
 // TagData представляет данные тега
@@ -37,6 +41,14 @@ type TagData struct {
 	ID        uuid.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	CompanyID uuid.UUID `json:"company_id" example:"550e8400-e29b-41d4-a716-446655440001"`
 	Name      string    `json:"name" example:"Important"`
+}
+
+// SenderData представляет данные контрагента
+type SenderData struct {
+	ID        uuid.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	CompanyID uuid.UUID `json:"company_id" example:"550e8400-e29b-41d4-a716-446655440001"`
+	Name      string    `json:"name" example:"ООО Рога и Копыта"`
+	Email     *string   `json:"email,omitempty" example:"info@example.com"`
 }
 
 // UpdateRequest представляет запрос на обновление документа

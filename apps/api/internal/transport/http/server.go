@@ -8,6 +8,7 @@ import (
 	"techmind/internal/transport/http/handlers/document"
 	"techmind/internal/transport/http/handlers/documenttag"
 	"techmind/internal/transport/http/handlers/folder"
+	"techmind/internal/transport/http/handlers/sender"
 	"techmind/pkg/config"
 
 	"github.com/gofiber/fiber/v3"
@@ -19,6 +20,7 @@ type ServerDeps struct {
 	FolderService      service.FolderService
 	DocumentService    service.DocumentService
 	DocumentTagService service.DocumentTagService
+	SenderService      service.SenderService
 	CompanyUserService service.CompanyUserService
 	CompanyService     service.CompanyService
 	Config             *config.Config
@@ -74,6 +76,10 @@ func (s *Server) setupRoutes() {
 	// Регистрация маршрутов для тегов документов
 	documentTagsGroup := private.Group("/document-tags")
 	documenttag.RegisterRoutes(documentTagsGroup, s.deps.DocumentTagService)
+
+	// Регистрация маршрутов для контрагентов (отправителей)
+	sendersGroup := private.Group("/senders")
+	sender.RegisterRoutes(sendersGroup, s.deps.SenderService)
 
 	// Регистрация маршрутов для компаний
 	companiesGroup := private.Group("/companies")

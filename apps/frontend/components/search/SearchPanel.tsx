@@ -43,12 +43,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
   const loadFilters = async () => {
     if (!currentCompany) return;
     try {
-      const [tagsData, /*sendersData*/] = await Promise.all([
+      const [tagsData, sendersData] = await Promise.all([
         tagsApi.getByCompany(currentCompany.id),
-        //sendersApi.getByCompany(currentCompany.id),
+        sendersApi.getByCompany(currentCompany.id),
       ]);
       setAllTags(tagsData.tags);
-      //setAllSenders(sendersData.senders);
+      setAllSenders(sendersData.senders);
     } catch (error) {
       console.error('Failed to load filters:', error);
     }
@@ -98,15 +98,22 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
       </div>
 
       <div>
-        <p className="text-sm text-default-500 mb-2">Отправитель</p>
+        <p className="text-sm text-default-500 mb-2">Контрагент</p>
         <Select
-          placeholder="Выберите отправителя"
+          placeholder="Выберите контрагента"
           selectedKeys={selectedSender ? [selectedSender] : []}
-          onChange={(e) => setSelectedSender(e.target.value)}
+          onSelectionChange={(keys) => {
+            const selected = Array.from(keys)[0] as string;
+            setSelectedSender(selected || '');
+          }}
           variant="bordered"
+          classNames={{
+            value: "text-white",
+          }}
+          className="text-white"
         >
           {allSenders.map((sender) => (
-            <SelectItem key={sender.id}>
+            <SelectItem key={sender.id} textValue={sender.name}>
               {sender.name} {sender.email && `(${sender.email})`}
             </SelectItem>
           ))}
@@ -132,13 +139,20 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
           {results.map((doc) => (
             <div
               key={doc.id}
-              className={`flex items-center gap-2 p-2 rounded hover:bg-default-100 cursor-pointer ${
+              className={`flex items-start gap-2 p-2 rounded hover:bg-default-100 cursor-pointer ${
                 highlightedIds.includes(doc.id) ? 'bg-warning-50' : ''
               }`}
               onClick={() => onDocumentSelect(doc)}
             >
-              <FileIcon className="w-4 h-4 text-primary flex-shrink-0" />
-              <span className="text-sm truncate">{doc.name}</span>
+              <FileIcon className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm truncate">{doc.name}</div>
+                {doc.sender_id && (
+                  <div className="text-xs text-default-400 truncate">
+                    Отправитель: {doc.sender?.name || 'Загрузка...'}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
           {results.length === 0 && !isLoading && (

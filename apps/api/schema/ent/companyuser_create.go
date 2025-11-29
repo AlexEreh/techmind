@@ -9,6 +9,7 @@ import (
 	"techmind/schema/ent/company"
 	"techmind/schema/ent/companyuser"
 	"techmind/schema/ent/user"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -37,6 +38,20 @@ func (_c *CompanyUserCreate) SetCompanyID(v uuid.UUID) *CompanyUserCreate {
 // SetRole sets the "role" field.
 func (_c *CompanyUserCreate) SetRole(v int) *CompanyUserCreate {
 	_c.mutation.SetRole(v)
+	return _c
+}
+
+// SetAddedAt sets the "added_at" field.
+func (_c *CompanyUserCreate) SetAddedAt(v time.Time) *CompanyUserCreate {
+	_c.mutation.SetAddedAt(v)
+	return _c
+}
+
+// SetNillableAddedAt sets the "added_at" field if the given value is not nil.
+func (_c *CompanyUserCreate) SetNillableAddedAt(v *time.Time) *CompanyUserCreate {
+	if v != nil {
+		_c.SetAddedAt(*v)
+	}
 	return _c
 }
 
@@ -99,6 +114,10 @@ func (_c *CompanyUserCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *CompanyUserCreate) defaults() {
+	if _, ok := _c.mutation.AddedAt(); !ok {
+		v := companyuser.DefaultAddedAt()
+		_c.mutation.SetAddedAt(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := companyuser.DefaultID()
 		_c.mutation.SetID(v)
@@ -115,6 +134,9 @@ func (_c *CompanyUserCreate) check() error {
 	}
 	if _, ok := _c.mutation.Role(); !ok {
 		return &ValidationError{Name: "role", err: errors.New(`ent: missing required field "CompanyUser.role"`)}
+	}
+	if _, ok := _c.mutation.AddedAt(); !ok {
+		return &ValidationError{Name: "added_at", err: errors.New(`ent: missing required field "CompanyUser.added_at"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "CompanyUser.user"`)}
@@ -160,6 +182,10 @@ func (_c *CompanyUserCreate) createSpec() (*CompanyUser, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Role(); ok {
 		_spec.SetField(companyuser.FieldRole, field.TypeInt, value)
 		_node.Role = value
+	}
+	if value, ok := _c.mutation.AddedAt(); ok {
+		_spec.SetField(companyuser.FieldAddedAt, field.TypeTime, value)
+		_node.AddedAt = value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

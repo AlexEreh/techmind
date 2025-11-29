@@ -55,6 +55,11 @@ func IDLTE(id uuid.UUID) predicate.Sender {
 	return predicate.Sender(sql.FieldLTE(FieldID, id))
 }
 
+// CompanyID applies equality check predicate on the "company_id" field. It's identical to CompanyIDEQ.
+func CompanyID(v uuid.UUID) predicate.Sender {
+	return predicate.Sender(sql.FieldEQ(FieldCompanyID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Sender {
 	return predicate.Sender(sql.FieldEQ(FieldName, v))
@@ -63,6 +68,26 @@ func Name(v string) predicate.Sender {
 // Email applies equality check predicate on the "email" field. It's identical to EmailEQ.
 func Email(v string) predicate.Sender {
 	return predicate.Sender(sql.FieldEQ(FieldEmail, v))
+}
+
+// CompanyIDEQ applies the EQ predicate on the "company_id" field.
+func CompanyIDEQ(v uuid.UUID) predicate.Sender {
+	return predicate.Sender(sql.FieldEQ(FieldCompanyID, v))
+}
+
+// CompanyIDNEQ applies the NEQ predicate on the "company_id" field.
+func CompanyIDNEQ(v uuid.UUID) predicate.Sender {
+	return predicate.Sender(sql.FieldNEQ(FieldCompanyID, v))
+}
+
+// CompanyIDIn applies the In predicate on the "company_id" field.
+func CompanyIDIn(vs ...uuid.UUID) predicate.Sender {
+	return predicate.Sender(sql.FieldIn(FieldCompanyID, vs...))
+}
+
+// CompanyIDNotIn applies the NotIn predicate on the "company_id" field.
+func CompanyIDNotIn(vs ...uuid.UUID) predicate.Sender {
+	return predicate.Sender(sql.FieldNotIn(FieldCompanyID, vs...))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -203,6 +228,29 @@ func EmailEqualFold(v string) predicate.Sender {
 // EmailContainsFold applies the ContainsFold predicate on the "email" field.
 func EmailContainsFold(v string) predicate.Sender {
 	return predicate.Sender(sql.FieldContainsFold(FieldEmail, v))
+}
+
+// HasCompany applies the HasEdge predicate on the "company" edge.
+func HasCompany() predicate.Sender {
+	return predicate.Sender(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, CompanyTable, CompanyColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCompanyWith applies the HasEdge predicate on the "company" edge with a given conditions (other predicates).
+func HasCompanyWith(preds ...predicate.Company) predicate.Sender {
+	return predicate.Sender(func(s *sql.Selector) {
+		step := newCompanyStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasDocuments applies the HasEdge predicate on the "documents" edge.

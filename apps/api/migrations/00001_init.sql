@@ -60,14 +60,19 @@ CREATE INDEX idx_folders_company_id ON folders (company_id);
 CREATE INDEX idx_folders_parent_folder_id ON folders (parent_folder_id);
 
 -- ===========================
--- sender
+-- senders
 -- ===========================
-CREATE TABLE sender
+CREATE TABLE senders
 (
-    id    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name  TEXT NOT NULL,
-    email TEXT             DEFAULT NULL
+    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    name       TEXT NOT NULL,
+    email      TEXT             DEFAULT NULL,
+
+    CONSTRAINT fk_senders_company FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_senders_company_id ON senders (company_id);
 
 -- ===========================
 -- documents
@@ -88,7 +93,7 @@ CREATE TABLE documents
 
     CONSTRAINT fk_documents_company FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
     CONSTRAINT fk_documents_folder FOREIGN KEY (folder_id) REFERENCES folders (id) ON DELETE SET NULL,
-    CONSTRAINT fk_documents_sender FOREIGN KEY (sender_id) REFERENCES sender (id) ON DELETE SET NULL
+    CONSTRAINT fk_documents_sender FOREIGN KEY (sender_id) REFERENCES senders (id) ON DELETE SET NULL
 );
 
 CREATE INDEX idx_documents_company_id ON documents (company_id);

@@ -2,6 +2,7 @@ package sender
 
 import (
 	"context"
+
 	"techmind/internal/repo"
 	"techmind/schema/ent"
 	"techmind/schema/ent/sender"
@@ -17,9 +18,10 @@ func NewRepository(client *ent.Client) repo.SenderRepository {
 	return &senderRepo{client: client}
 }
 
-func (r *senderRepo) Create(ctx context.Context, name string, email *string) (*ent.Sender, error) {
+func (r *senderRepo) Create(ctx context.Context, companyID uuid.UUID, name string, email *string) (*ent.Sender, error) {
 	create := r.client.Sender.
 		Create().
+		SetCompanyID(companyID).
 		SetName(name)
 
 	if email != nil {
@@ -59,5 +61,12 @@ func (r *senderRepo) Delete(ctx context.Context, id uuid.UUID) error {
 func (r *senderRepo) List(ctx context.Context) ([]*ent.Sender, error) {
 	return r.client.Sender.
 		Query().
+		All(ctx)
+}
+
+func (r *senderRepo) ListByCompany(ctx context.Context, companyID uuid.UUID) ([]*ent.Sender, error) {
+	return r.client.Sender.
+		Query().
+		Where(sender.CompanyID(companyID)).
 		All(ctx)
 }

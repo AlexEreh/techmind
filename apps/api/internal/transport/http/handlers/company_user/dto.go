@@ -1,6 +1,10 @@
 package company_user
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // CompanyData содержит информацию о компании
 type CompanyData struct {
@@ -20,4 +24,13 @@ type CompanyUserData struct {
 // MyCompaniesResponse содержит список компаний пользователя
 type MyCompaniesResponse struct {
 	Companies []CompanyUserData `json:"companies"`
+}
+
+// CompanyUserWithDetailsDTO содержит информацию о пользователе компании с деталями
+type CompanyUserWithDetailsDTO struct {
+	ID       uuid.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440001"`
+	Username string    `json:"username" example:"John Doe"`
+	Email    string    `json:"email" example:"john@example.com"`
+	Role     int       `json:"role" example:"1"`
+	AddedAt  time.Time `json:"added_at" example:"2023-01-01T00:00:00Z"`
 }

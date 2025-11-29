@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"techmind/schema/ent/company"
 	"techmind/schema/ent/document"
 	"techmind/schema/ent/sender"
 
@@ -19,6 +20,12 @@ type SenderCreate struct {
 	config
 	mutation *SenderMutation
 	hooks    []Hook
+}
+
+// SetCompanyID sets the "company_id" field.
+func (_c *SenderCreate) SetCompanyID(v uuid.UUID) *SenderCreate {
+	_c.mutation.SetCompanyID(v)
+	return _c
 }
 
 // SetName sets the "name" field.
@@ -53,6 +60,11 @@ func (_c *SenderCreate) SetNillableID(v *uuid.UUID) *SenderCreate {
 		_c.SetID(*v)
 	}
 	return _c
+}
+
+// SetCompany sets the "company" edge to the Company entity.
+func (_c *SenderCreate) SetCompany(v *Company) *SenderCreate {
+	return _c.SetCompanyID(v.ID)
 }
 
 // AddDocumentIDs adds the "documents" edge to the Document entity by IDs.
@@ -113,6 +125,9 @@ func (_c *SenderCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *SenderCreate) check() error {
+	if _, ok := _c.mutation.CompanyID(); !ok {
+		return &ValidationError{Name: "company_id", err: errors.New(`ent: missing required field "Sender.company_id"`)}
+	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Sender.name"`)}
 	}
@@ -120,6 +135,9 @@ func (_c *SenderCreate) check() error {
 		if err := sender.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Sender.name": %w`, err)}
 		}
+	}
+	if len(_c.mutation.CompanyIDs()) == 0 {
+		return &ValidationError{Name: "company", err: errors.New(`ent: missing required edge "Sender.company"`)}
 	}
 	return nil
 }
@@ -163,6 +181,23 @@ func (_c *SenderCreate) createSpec() (*Sender, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Email(); ok {
 		_spec.SetField(sender.FieldEmail, field.TypeString, value)
 		_node.Email = &value
+	}
+	if nodes := _c.mutation.CompanyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sender.CompanyTable,
+			Columns: []string{sender.CompanyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(company.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.CompanyID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.DocumentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -10,6 +10,7 @@ import (
 	"techmind/schema/ent/companyuser"
 	"techmind/schema/ent/document"
 	"techmind/schema/ent/folder"
+	"techmind/schema/ent/sender"
 	"techmind/schema/ent/tag"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -102,6 +103,21 @@ func (_c *CompanyCreate) AddTags(v ...*Tag) *CompanyCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddTagIDs(ids...)
+}
+
+// AddSenderIDs adds the "senders" edge to the Sender entity by IDs.
+func (_c *CompanyCreate) AddSenderIDs(ids ...uuid.UUID) *CompanyCreate {
+	_c.mutation.AddSenderIDs(ids...)
+	return _c
+}
+
+// AddSenders adds the "senders" edges to the Sender entity.
+func (_c *CompanyCreate) AddSenders(v ...*Sender) *CompanyCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSenderIDs(ids...)
 }
 
 // Mutation returns the CompanyMutation object of the builder.
@@ -251,6 +267,22 @@ func (_c *CompanyCreate) createSpec() (*Company, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SendersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   company.SendersTable,
+			Columns: []string{company.SendersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

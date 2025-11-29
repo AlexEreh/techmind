@@ -61,6 +61,8 @@ type CompanyUserRepository interface {
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]*ent.CompanyUser, error)
 	// ListByUserWithCompany retrieves all company users by user ID with company details
 	ListByUserWithCompany(ctx context.Context, userID uuid.UUID) ([]*ent.CompanyUser, error)
+	// ListByCompanyWithUser retrieves all company users by company ID with user details
+	ListByCompanyWithUser(ctx context.Context, companyID uuid.UUID) ([]*ent.CompanyUser, error)
 }
 
 // FolderRepository defines folder-related database operations
@@ -84,7 +86,7 @@ type FolderRepository interface {
 // SenderRepository defines sender-related database operations
 type SenderRepository interface {
 	// Create creates a new sender
-	Create(ctx context.Context, name string, email *string) (*ent.Sender, error)
+	Create(ctx context.Context, companyID uuid.UUID, name string, email *string) (*ent.Sender, error)
 	// GetByID retrieves a sender by ID
 	GetByID(ctx context.Context, id uuid.UUID) (*ent.Sender, error)
 	// Update updates an existing sender
@@ -93,6 +95,8 @@ type SenderRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	// List retrieves all senders
 	List(ctx context.Context) ([]*ent.Sender, error)
+	// ListByCompany retrieves all senders for a company
+	ListByCompany(ctx context.Context, companyID uuid.UUID) ([]*ent.Sender, error)
 }
 
 // DocumentRepository defines document-related database operations

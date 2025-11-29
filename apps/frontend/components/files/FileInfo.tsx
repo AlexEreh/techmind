@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Document, Tag } from '@/lib/api/types';
+import { Document, Tag, User, Sender } from '@/lib/api/types';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
+import { Spinner } from '@heroui/spinner';
+import { Select, SelectItem } from '@heroui/select';
 import { tagsApi } from '@/lib/api/tags';
 import { documentsApi } from '@/lib/api/documents';
+import { usersApi } from '@/lib/api/users';
+import { sendersApi } from '@/lib/api/senders';
 import { useAuth } from '@/contexts/AuthContext';
 import { TrashIcon } from '@/components/icons';
 
@@ -18,14 +22,61 @@ interface FileInfoProps {
 
 export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete }) => {
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [allSenders, setAllSenders] = useState<Sender[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [createdByUser, setCreatedByUser] = useState<User | null>(null);
+  const [updatedByUser, setUpdatedByUser] = useState<User | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const { currentCompany } = useAuth();
 
   useEffect(() => {
     if (currentCompany) {
       loadTags();
+      loadSenders();
     }
   }, [currentCompany]);
+
+  useEffect(() => {
+    if (document) {
+      loadUserInfo();
+    } else {
+      setCreatedByUser(null);
+      setUpdatedByUser(null);
+    }
+  }, [document?.id, document?.created_by, document?.updated_by]);
+
+  const loadUserInfo = async () => {
+    if (!document) return;
+
+    setLoadingUsers(true);
+    try {
+      const promises: Promise<User>[] = [];
+
+      if (document.created_by) {
+        promises.push(usersApi.getById(document.created_by));
+      }
+
+      if (document.updated_by && document.updated_by !== document.created_by) {
+        promises.push(usersApi.getById(document.updated_by));
+      }
+
+      const users = await Promise.all(promises);
+
+      if (document.created_by) {
+        setCreatedByUser(users[0]);
+      }
+
+      if (document.updated_by && document.updated_by !== document.created_by) {
+        setUpdatedByUser(users[1] || users[0]);
+      } else if (document.updated_by === document.created_by) {
+        setUpdatedByUser(users[0]);
+      }
+    } catch (error) {
+      console.error('Failed to load user info:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   const loadTags = async () => {
     if (!currentCompany) return;
@@ -34,6 +85,16 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
       setAllTags(tags);
     } catch (error) {
       console.error('Failed to load tags:', error);
+    }
+  };
+
+  const loadSenders = async () => {
+    if (!currentCompany) return;
+    try {
+      const { senders } = await sendersApi.getByCompany(currentCompany.id);
+      setAllSenders(senders);
+    } catch (error) {
+      console.error('Failed to load senders:', error);
     }
   };
 
@@ -54,6 +115,20 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
       onUpdate();
     } catch (error) {
       console.error('Failed to remove tag:', error);
+    }
+  };
+
+  const handleSenderChange = async (senderId: string) => {
+    if (!document) return;
+    try {
+      await documentsApi.update(document.id, {
+        name: document.name,
+        folder_id: document.folder_id || undefined,
+        sender_id: senderId || undefined,
+      });
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to update sender:', error);
     }
   };
 
@@ -124,6 +199,50 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
 
       <Divider />
 
+      {loadingUsers ? (
+        <div className="flex items-center justify-center py-2">
+          <Spinner size="sm" />
+        </div>
+      ) : (
+        <>
+          {createdByUser && (
+            <div>
+              <p className="text-sm text-default-500 mb-1">Загрузил</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-sm font-medium text-primary">
+                    {createdByUser.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{createdByUser.name}</p>
+                  <p className="text-xs text-default-400">{createdByUser.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {updatedByUser && updatedByUser.id !== createdByUser?.id && (
+            <div>
+              <p className="text-sm text-default-500 mb-1">Обновил</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center">
+                  <span className="text-sm font-medium text-secondary">
+                    {updatedByUser.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{updatedByUser.name}</p>
+                  <p className="text-xs text-default-400">{updatedByUser.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <Divider />
+
       <div>
         <p className="text-sm text-default-500 mb-2">Теги</p>
         <div className="flex flex-wrap gap-2 mb-2">
@@ -152,6 +271,28 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
               </Chip>
             ))}
         </div>
+      </div>
+
+      <div>
+        <p className="text-sm text-default-500 mb-2">Контрагент</p>
+        <Select
+          selectedKeys={document.sender_id ? [document.sender_id] : []}
+          onSelectionChange={(keys) => {
+            const selected = Array.from(keys)[0] as string;
+            handleSenderChange(selected);
+          }}
+          placeholder="Выберите контрагента"
+          className="w-full"
+          classNames={{
+            value: "text-white",
+          }}
+        >
+          {allSenders.map((sender) => (
+            <SelectItem key={sender.id} textValue={sender.name}>
+              {sender.name}
+            </SelectItem>
+          ))}
+        </Select>
       </div>
 
       {document.download_url && (
@@ -183,4 +324,3 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
     </div>
   );
 };
-
