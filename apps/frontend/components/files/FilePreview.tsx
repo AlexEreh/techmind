@@ -23,14 +23,20 @@ const FilePreviewComponent: React.FC<FilePreviewProps> = ({ document }) => {
   const isImage = document.mime_type.startsWith('image/');
   const isPdf = document.mime_type === 'application/pdf';
 
+
   return (
     <div className="h-full flex flex-col">
         <div className="flex-1 w-full">
-            <iframe
+            {(isPdf || document.preview_url) ? <iframe
                 src={document.preview_url || document.download_url}
                 className="w-full h-full border-0"
                 title={document.name}
-            />
+            /> :
+                          <div className="text-center text-default-400">
+                        <p>Предпросмотр недоступен</p>
+                        <p className="text-sm mt-2">{document.mime_type}</p>
+                      </div>
+            }
         </div>
       {/*{isPdf && document.download_url ? (*/}
       {/*  */}
