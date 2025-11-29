@@ -33,5 +33,7 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("company_users", CompanyUser.Type),
+		edge.To("created_documents", Document.Type),
+		edge.To("updated_documents", Document.Type),
 	}
 }

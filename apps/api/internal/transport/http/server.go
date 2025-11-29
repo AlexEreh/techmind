@@ -1,6 +1,7 @@
 package http
 
 import (
+	"techmind/internal/repo"
 	"techmind/internal/service"
 	"techmind/internal/transport/http/handlers/auth"
 	"techmind/internal/transport/http/handlers/company"
@@ -8,6 +9,7 @@ import (
 	"techmind/internal/transport/http/handlers/document"
 	"techmind/internal/transport/http/handlers/documenttag"
 	"techmind/internal/transport/http/handlers/folder"
+	"techmind/internal/transport/http/handlers/user"
 	"techmind/pkg/config"
 
 	"github.com/gofiber/fiber/v3"
@@ -21,6 +23,7 @@ type ServerDeps struct {
 	DocumentTagService service.DocumentTagService
 	CompanyUserService service.CompanyUserService
 	CompanyService     service.CompanyService
+	UserRepo           repo.UserRepository
 	Config             *config.Config
 }
 
@@ -79,6 +82,10 @@ func (s *Server) setupRoutes() {
 	companiesGroup := private.Group("/companies")
 	company.RegisterRoutes(companiesGroup, s.deps.CompanyService)
 	company_user.RegisterRoutes(companiesGroup, s.deps.CompanyUserService)
+
+	// Регистрация маршрутов для пользователей
+	usersGroup := private.Group("/users")
+	user.RegisterRoutes(usersGroup, s.deps.UserRepo)
 }
 
 func (s *Server) Listen(addr string) error {

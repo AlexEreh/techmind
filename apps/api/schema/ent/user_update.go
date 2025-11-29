@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"techmind/schema/ent/companyuser"
+	"techmind/schema/ent/document"
 	"techmind/schema/ent/predicate"
 	"techmind/schema/ent/user"
 
@@ -87,6 +88,36 @@ func (_u *UserUpdate) AddCompanyUsers(v ...*CompanyUser) *UserUpdate {
 	return _u.AddCompanyUserIDs(ids...)
 }
 
+// AddCreatedDocumentIDs adds the "created_documents" edge to the Document entity by IDs.
+func (_u *UserUpdate) AddCreatedDocumentIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.AddCreatedDocumentIDs(ids...)
+	return _u
+}
+
+// AddCreatedDocuments adds the "created_documents" edges to the Document entity.
+func (_u *UserUpdate) AddCreatedDocuments(v ...*Document) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCreatedDocumentIDs(ids...)
+}
+
+// AddUpdatedDocumentIDs adds the "updated_documents" edge to the Document entity by IDs.
+func (_u *UserUpdate) AddUpdatedDocumentIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.AddUpdatedDocumentIDs(ids...)
+	return _u
+}
+
+// AddUpdatedDocuments adds the "updated_documents" edges to the Document entity.
+func (_u *UserUpdate) AddUpdatedDocuments(v ...*Document) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddUpdatedDocumentIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
@@ -111,6 +142,48 @@ func (_u *UserUpdate) RemoveCompanyUsers(v ...*CompanyUser) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveCompanyUserIDs(ids...)
+}
+
+// ClearCreatedDocuments clears all "created_documents" edges to the Document entity.
+func (_u *UserUpdate) ClearCreatedDocuments() *UserUpdate {
+	_u.mutation.ClearCreatedDocuments()
+	return _u
+}
+
+// RemoveCreatedDocumentIDs removes the "created_documents" edge to Document entities by IDs.
+func (_u *UserUpdate) RemoveCreatedDocumentIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.RemoveCreatedDocumentIDs(ids...)
+	return _u
+}
+
+// RemoveCreatedDocuments removes "created_documents" edges to Document entities.
+func (_u *UserUpdate) RemoveCreatedDocuments(v ...*Document) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCreatedDocumentIDs(ids...)
+}
+
+// ClearUpdatedDocuments clears all "updated_documents" edges to the Document entity.
+func (_u *UserUpdate) ClearUpdatedDocuments() *UserUpdate {
+	_u.mutation.ClearUpdatedDocuments()
+	return _u
+}
+
+// RemoveUpdatedDocumentIDs removes the "updated_documents" edge to Document entities by IDs.
+func (_u *UserUpdate) RemoveUpdatedDocumentIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.RemoveUpdatedDocumentIDs(ids...)
+	return _u
+}
+
+// RemoveUpdatedDocuments removes "updated_documents" edges to Document entities.
+func (_u *UserUpdate) RemoveUpdatedDocuments(v ...*Document) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveUpdatedDocumentIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -232,6 +305,96 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.CreatedDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CreatedDocumentsTable,
+			Columns: []string{user.CreatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCreatedDocumentsIDs(); len(nodes) > 0 && !_u.mutation.CreatedDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CreatedDocumentsTable,
+			Columns: []string{user.CreatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CreatedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CreatedDocumentsTable,
+			Columns: []string{user.CreatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UpdatedDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.UpdatedDocumentsTable,
+			Columns: []string{user.UpdatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedUpdatedDocumentsIDs(); len(nodes) > 0 && !_u.mutation.UpdatedDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.UpdatedDocumentsTable,
+			Columns: []string{user.UpdatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UpdatedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.UpdatedDocumentsTable,
+			Columns: []string{user.UpdatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -311,6 +474,36 @@ func (_u *UserUpdateOne) AddCompanyUsers(v ...*CompanyUser) *UserUpdateOne {
 	return _u.AddCompanyUserIDs(ids...)
 }
 
+// AddCreatedDocumentIDs adds the "created_documents" edge to the Document entity by IDs.
+func (_u *UserUpdateOne) AddCreatedDocumentIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.AddCreatedDocumentIDs(ids...)
+	return _u
+}
+
+// AddCreatedDocuments adds the "created_documents" edges to the Document entity.
+func (_u *UserUpdateOne) AddCreatedDocuments(v ...*Document) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCreatedDocumentIDs(ids...)
+}
+
+// AddUpdatedDocumentIDs adds the "updated_documents" edge to the Document entity by IDs.
+func (_u *UserUpdateOne) AddUpdatedDocumentIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.AddUpdatedDocumentIDs(ids...)
+	return _u
+}
+
+// AddUpdatedDocuments adds the "updated_documents" edges to the Document entity.
+func (_u *UserUpdateOne) AddUpdatedDocuments(v ...*Document) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddUpdatedDocumentIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
@@ -335,6 +528,48 @@ func (_u *UserUpdateOne) RemoveCompanyUsers(v ...*CompanyUser) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveCompanyUserIDs(ids...)
+}
+
+// ClearCreatedDocuments clears all "created_documents" edges to the Document entity.
+func (_u *UserUpdateOne) ClearCreatedDocuments() *UserUpdateOne {
+	_u.mutation.ClearCreatedDocuments()
+	return _u
+}
+
+// RemoveCreatedDocumentIDs removes the "created_documents" edge to Document entities by IDs.
+func (_u *UserUpdateOne) RemoveCreatedDocumentIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.RemoveCreatedDocumentIDs(ids...)
+	return _u
+}
+
+// RemoveCreatedDocuments removes "created_documents" edges to Document entities.
+func (_u *UserUpdateOne) RemoveCreatedDocuments(v ...*Document) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCreatedDocumentIDs(ids...)
+}
+
+// ClearUpdatedDocuments clears all "updated_documents" edges to the Document entity.
+func (_u *UserUpdateOne) ClearUpdatedDocuments() *UserUpdateOne {
+	_u.mutation.ClearUpdatedDocuments()
+	return _u
+}
+
+// RemoveUpdatedDocumentIDs removes the "updated_documents" edge to Document entities by IDs.
+func (_u *UserUpdateOne) RemoveUpdatedDocumentIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.RemoveUpdatedDocumentIDs(ids...)
+	return _u
+}
+
+// RemoveUpdatedDocuments removes "updated_documents" edges to Document entities.
+func (_u *UserUpdateOne) RemoveUpdatedDocuments(v ...*Document) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveUpdatedDocumentIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -479,6 +714,96 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(companyuser.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CreatedDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CreatedDocumentsTable,
+			Columns: []string{user.CreatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCreatedDocumentsIDs(); len(nodes) > 0 && !_u.mutation.CreatedDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CreatedDocumentsTable,
+			Columns: []string{user.CreatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CreatedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CreatedDocumentsTable,
+			Columns: []string{user.CreatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UpdatedDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.UpdatedDocumentsTable,
+			Columns: []string{user.UpdatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedUpdatedDocumentsIDs(); len(nodes) > 0 && !_u.mutation.UpdatedDocumentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.UpdatedDocumentsTable,
+			Columns: []string{user.UpdatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UpdatedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.UpdatedDocumentsTable,
+			Columns: []string{user.UpdatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

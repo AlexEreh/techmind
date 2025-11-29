@@ -101,9 +101,24 @@ func SenderID(v uuid.UUID) predicate.Document {
 	return predicate.Document(sql.FieldEQ(FieldSenderID, v))
 }
 
+// CreatedBy applies equality check predicate on the "created_by" field. It's identical to CreatedByEQ.
+func CreatedBy(v uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldEQ(FieldCreatedBy, v))
+}
+
+// UpdatedBy applies equality check predicate on the "updated_by" field. It's identical to UpdatedByEQ.
+func UpdatedBy(v uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldEQ(FieldUpdatedBy, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Document {
 	return predicate.Document(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Document {
+	return predicate.Document(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // CompanyIDEQ applies the EQ predicate on the "company_id" field.
@@ -561,6 +576,66 @@ func SenderIDNotNil() predicate.Document {
 	return predicate.Document(sql.FieldNotNull(FieldSenderID))
 }
 
+// CreatedByEQ applies the EQ predicate on the "created_by" field.
+func CreatedByEQ(v uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldEQ(FieldCreatedBy, v))
+}
+
+// CreatedByNEQ applies the NEQ predicate on the "created_by" field.
+func CreatedByNEQ(v uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldNEQ(FieldCreatedBy, v))
+}
+
+// CreatedByIn applies the In predicate on the "created_by" field.
+func CreatedByIn(vs ...uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldIn(FieldCreatedBy, vs...))
+}
+
+// CreatedByNotIn applies the NotIn predicate on the "created_by" field.
+func CreatedByNotIn(vs ...uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldNotIn(FieldCreatedBy, vs...))
+}
+
+// CreatedByIsNil applies the IsNil predicate on the "created_by" field.
+func CreatedByIsNil() predicate.Document {
+	return predicate.Document(sql.FieldIsNull(FieldCreatedBy))
+}
+
+// CreatedByNotNil applies the NotNil predicate on the "created_by" field.
+func CreatedByNotNil() predicate.Document {
+	return predicate.Document(sql.FieldNotNull(FieldCreatedBy))
+}
+
+// UpdatedByEQ applies the EQ predicate on the "updated_by" field.
+func UpdatedByEQ(v uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldEQ(FieldUpdatedBy, v))
+}
+
+// UpdatedByNEQ applies the NEQ predicate on the "updated_by" field.
+func UpdatedByNEQ(v uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldNEQ(FieldUpdatedBy, v))
+}
+
+// UpdatedByIn applies the In predicate on the "updated_by" field.
+func UpdatedByIn(vs ...uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldIn(FieldUpdatedBy, vs...))
+}
+
+// UpdatedByNotIn applies the NotIn predicate on the "updated_by" field.
+func UpdatedByNotIn(vs ...uuid.UUID) predicate.Document {
+	return predicate.Document(sql.FieldNotIn(FieldUpdatedBy, vs...))
+}
+
+// UpdatedByIsNil applies the IsNil predicate on the "updated_by" field.
+func UpdatedByIsNil() predicate.Document {
+	return predicate.Document(sql.FieldIsNull(FieldUpdatedBy))
+}
+
+// UpdatedByNotNil applies the NotNil predicate on the "updated_by" field.
+func UpdatedByNotNil() predicate.Document {
+	return predicate.Document(sql.FieldNotNull(FieldUpdatedBy))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Document {
 	return predicate.Document(sql.FieldEQ(FieldCreatedAt, v))
@@ -599,6 +674,46 @@ func CreatedAtLT(v time.Time) predicate.Document {
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Document {
 	return predicate.Document(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.Document {
+	return predicate.Document(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.Document {
+	return predicate.Document(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Document {
+	return predicate.Document(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Document {
+	return predicate.Document(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.Document {
+	return predicate.Document(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.Document {
+	return predicate.Document(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.Document {
+	return predicate.Document(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.Document {
+	return predicate.Document(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // HasCompany applies the HasEdge predicate on the "company" edge.
@@ -662,6 +777,52 @@ func HasSender() predicate.Document {
 func HasSenderWith(preds ...predicate.Sender) predicate.Document {
 	return predicate.Document(func(s *sql.Selector) {
 		step := newSenderStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasCreatedByUser applies the HasEdge predicate on the "created_by_user" edge.
+func HasCreatedByUser() predicate.Document {
+	return predicate.Document(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, CreatedByUserTable, CreatedByUserColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCreatedByUserWith applies the HasEdge predicate on the "created_by_user" edge with a given conditions (other predicates).
+func HasCreatedByUserWith(preds ...predicate.User) predicate.Document {
+	return predicate.Document(func(s *sql.Selector) {
+		step := newCreatedByUserStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUpdatedByUser applies the HasEdge predicate on the "updated_by_user" edge.
+func HasUpdatedByUser() predicate.Document {
+	return predicate.Document(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, UpdatedByUserTable, UpdatedByUserColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUpdatedByUserWith applies the HasEdge predicate on the "updated_by_user" edge with a given conditions (other predicates).
+func HasUpdatedByUserWith(preds ...predicate.User) predicate.Document {
+	return predicate.Document(func(s *sql.Selector) {
+		step := newUpdatedByUserStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

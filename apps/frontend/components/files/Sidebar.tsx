@@ -71,20 +71,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
 
       <div className="flex-1" />
 
-      {currentCompany && (
-        <Tooltip
-          content={`Компания: ${currentCompany.name}\nНажмите для смены`}
-          placement="right"
-        >
-          <Button
-            isIconOnly
-            variant="light"
-            onPress={() => router.push('/select-company')}
-          >
-            <FolderIcon className="w-5 h-5" />
-          </Button>
-        </Tooltip>
-      )}
+      {/*{currentCompany && (*/}
+      {/*  <Tooltip*/}
+      {/*    content={`Компания: ${currentCompany.name}\nНажмите для смены`}*/}
+      {/*    placement="right"*/}
+      {/*  >*/}
+      {/*    <Button*/}
+      {/*      isIconOnly*/}
+      {/*      variant="light"*/}
+      {/*      onPress={() => router.push('/select-company')}*/}
+      {/*    >*/}
+      {/*      <FolderIcon className="w-5 h-5" />*/}
+      {/*    </Button>*/}
+      {/*  </Tooltip>*/}
+      {/*)}*/}
 
       <Tooltip content="Профиль" placement="right">
         <Button

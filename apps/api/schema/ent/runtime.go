@@ -56,9 +56,15 @@ func init() {
 	// document.ChecksumValidator is a validator for the "checksum" field. It is called by the builders before save.
 	document.ChecksumValidator = documentDescChecksum.Validators[0].(func(string) error)
 	// documentDescCreatedAt is the schema descriptor for created_at field.
-	documentDescCreatedAt := documentFields[10].Descriptor()
+	documentDescCreatedAt := documentFields[12].Descriptor()
 	// document.DefaultCreatedAt holds the default value on creation for the created_at field.
 	document.DefaultCreatedAt = documentDescCreatedAt.Default.(func() time.Time)
+	// documentDescUpdatedAt is the schema descriptor for updated_at field.
+	documentDescUpdatedAt := documentFields[13].Descriptor()
+	// document.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	document.DefaultUpdatedAt = documentDescUpdatedAt.Default.(func() time.Time)
+	// document.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	document.UpdateDefaultUpdatedAt = documentDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// documentDescID is the schema descriptor for id field.
 	documentDescID := documentFields[0].Descriptor()
 	// document.DefaultID holds the default value on creation for the id field.

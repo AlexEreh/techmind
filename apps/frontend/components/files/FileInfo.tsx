@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Document, Tag } from '@/lib/api/types';
+import { Document, Tag, User } from '@/lib/api/types';
 import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
+import { Spinner } from '@heroui/spinner';
 import { tagsApi } from '@/lib/api/tags';
 import { documentsApi } from '@/lib/api/documents';
+import { usersApi } from '@/lib/api/users';
 import { useAuth } from '@/contexts/AuthContext';
 import { TrashIcon } from '@/components/icons';
 
@@ -19,6 +21,9 @@ interface FileInfoProps {
 export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete }) => {
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [createdByUser, setCreatedByUser] = useState<User | null>(null);
+  const [updatedByUser, setUpdatedByUser] = useState<User | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const { currentCompany } = useAuth();
 
   useEffect(() => {
@@ -26,6 +31,50 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
       loadTags();
     }
   }, [currentCompany]);
+
+  useEffect(() => {
+    if (document) {
+      loadUserInfo();
+    } else {
+      setCreatedByUser(null);
+      setUpdatedByUser(null);
+    }
+  }, [document?.id, document?.created_by, document?.updated_by]);
+
+  const loadUserInfo = async () => {
+    if (!document) return;
+
+    setLoadingUsers(true);
+    try {
+      const promises: Promise<User>[] = [];
+
+      if (document.created_by) {
+        promises.push(usersApi.getById(document.created_by));
+      }
+
+      if (document.updated_by && document.updated_by !== document.created_by) {
+        promises.push(usersApi.getById(document.updated_by));
+      }
+
+      const users = await Promise.all(promises);
+
+      if (document.created_by) {
+        setCreatedByUser(users[0]);
+      }
+
+      if (document.updated_by && document.updated_by !== document.created_by) {
+        setUpdatedByUser(users[1] || users[0]);
+      } else if (document.updated_by === document.created_by) {
+        setUpdatedByUser(users[0]);
+      }
+    } catch (error) {
+      console.error('Failed to load user info:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // ...existing code...
 
   const loadTags = async () => {
     if (!currentCompany) return;
@@ -122,7 +171,60 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
         <p className="text-sm">{formatDate(document.created_at)}</p>
       </div>
 
+      {document.updated_at && document.updated_at !== document.created_at && (
+        <div>
+          <p className="text-sm text-default-500 mb-1">Дата обновления</p>
+          <p className="text-sm">{formatDate(document.updated_at)}</p>
+        </div>
+      )}
+
       <Divider />
+
+      {loadingUsers ? (
+        <div className="flex items-center justify-center py-2">
+          <Spinner size="sm" />
+        </div>
+      ) : (
+        <>
+          {createdByUser && (
+            <div>
+              <p className="text-sm text-default-500 mb-1">Загрузил</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-sm font-medium text-primary">
+                    {createdByUser.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{createdByUser.name}</p>
+                  <p className="text-xs text-default-400">{createdByUser.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {updatedByUser && updatedByUser.id !== createdByUser?.id && (
+            <div>
+              <p className="text-sm text-default-500 mb-1">Обновил</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center">
+                  <span className="text-sm font-medium text-secondary">
+                    {updatedByUser.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{updatedByUser.name}</p>
+                  <p className="text-xs text-default-400">{updatedByUser.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <Divider />
+
+      {/* ...existing tags code... */}
 
       <div>
         <p className="text-sm text-default-500 mb-2">Теги</p>

@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+
 	"techmind/internal/repo"
 	"techmind/schema/ent"
 	"techmind/schema/ent/document"
@@ -17,7 +18,7 @@ func NewRepository(client *ent.Client) repo.DocumentRepository {
 	return &documentRepo{client: client}
 }
 
-func (r *documentRepo) Create(ctx context.Context, companyID uuid.UUID, folderID *uuid.UUID, name string, filePath string, fileSize int64, mimeType string, checksum string) (*ent.Document, error) {
+func (r *documentRepo) Create(ctx context.Context, companyID uuid.UUID, folderID *uuid.UUID, name string, filePath string, fileSize int64, mimeType string, checksum string, createdBy uuid.UUID) (*ent.Document, error) {
 	create := r.client.Document.
 		Create().
 		SetCompanyID(companyID).
@@ -25,15 +26,13 @@ func (r *documentRepo) Create(ctx context.Context, companyID uuid.UUID, folderID
 		SetFilePath(filePath).
 		SetFileSize(fileSize).
 		SetMimeType(mimeType).
-		SetChecksum(checksum)
+		SetChecksum(checksum).
+		SetCreatedBy(createdBy).
+		SetUpdatedBy(createdBy)
 
 	if folderID != nil {
 		create = create.SetFolderID(*folderID)
 	}
-
-	//if senderID != nil {
-	//	create = create.SetSenderID(*senderID)
-	//}
 
 	return create.Save(ctx)
 }
@@ -46,10 +45,11 @@ func (r *documentRepo) GetByID(ctx context.Context, id uuid.UUID) (*ent.Document
 }
 
 // func (r *documentRepo) Update(ctx context.Context, id uuid.UUID, filePath string, fileSize int64, mimeType string, checksum string) (*ent.Document, error) {
-func (r *documentRepo) Update(ctx context.Context, id uuid.UUID, folderID *uuid.UUID, senderID *uuid.UUID, name string) (*ent.Document, error) {
+func (r *documentRepo) Update(ctx context.Context, id uuid.UUID, folderID *uuid.UUID, senderID *uuid.UUID, name string, updatedBy uuid.UUID) (*ent.Document, error) {
 	update := r.client.Document.
 		UpdateOneID(id).
-		SetName(name)
+		SetName(name).
+		SetUpdatedBy(updatedBy)
 
 	if folderID != nil {
 		update = update.SetFolderID(*folderID)

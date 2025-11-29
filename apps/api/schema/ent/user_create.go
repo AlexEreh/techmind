@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"techmind/schema/ent/companyuser"
+	"techmind/schema/ent/document"
 	"techmind/schema/ent/user"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -66,6 +67,36 @@ func (_c *UserCreate) AddCompanyUsers(v ...*CompanyUser) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddCompanyUserIDs(ids...)
+}
+
+// AddCreatedDocumentIDs adds the "created_documents" edge to the Document entity by IDs.
+func (_c *UserCreate) AddCreatedDocumentIDs(ids ...uuid.UUID) *UserCreate {
+	_c.mutation.AddCreatedDocumentIDs(ids...)
+	return _c
+}
+
+// AddCreatedDocuments adds the "created_documents" edges to the Document entity.
+func (_c *UserCreate) AddCreatedDocuments(v ...*Document) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddCreatedDocumentIDs(ids...)
+}
+
+// AddUpdatedDocumentIDs adds the "updated_documents" edge to the Document entity by IDs.
+func (_c *UserCreate) AddUpdatedDocumentIDs(ids ...uuid.UUID) *UserCreate {
+	_c.mutation.AddUpdatedDocumentIDs(ids...)
+	return _c
+}
+
+// AddUpdatedDocuments adds the "updated_documents" edges to the Document entity.
+func (_c *UserCreate) AddUpdatedDocuments(v ...*Document) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddUpdatedDocumentIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -191,6 +222,38 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(companyuser.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CreatedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CreatedDocumentsTable,
+			Columns: []string{user.CreatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.UpdatedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.UpdatedDocumentsTable,
+			Columns: []string{user.UpdatedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

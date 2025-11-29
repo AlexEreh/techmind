@@ -59,6 +59,7 @@ type DocumentUploadInput struct {
 	FileSize  int64
 	MimeType  string
 	SenderID  *uuid.UUID
+	UserID    uuid.UUID // ID пользователя, который загружает документ
 }
 
 // DocumentUpdateInput содержит данные для обновления метаданных документа
@@ -66,6 +67,7 @@ type DocumentUpdateInput struct {
 	Name     string
 	FolderID *uuid.UUID
 	SenderID *uuid.UUID
+	UserID   uuid.UUID // ID пользователя, который обновляет документ
 }
 
 // DocumentWithTags содержит документ вместе с его тегами

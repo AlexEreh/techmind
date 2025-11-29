@@ -26,7 +26,10 @@ type DocumentResponse struct {
 	FileSize        int64      `json:"file_size" example:"1024000"`
 	MimeType        string     `json:"mime_type" example:"application/pdf"`
 	Checksum        string     `json:"checksum" example:"abc123def456"`
+	CreatedBy       *uuid.UUID `json:"created_by,omitempty" example:"550e8400-e29b-41d4-a716-446655440004"`
+	UpdatedBy       *uuid.UUID `json:"updated_by,omitempty" example:"550e8400-e29b-41d4-a716-446655440005"`
 	CreatedAt       time.Time  `json:"created_at" example:"2024-11-28T15:04:05Z"`
+	UpdatedAt       time.Time  `json:"updated_at" example:"2024-11-28T15:04:05Z"`
 	Tags            []TagData  `json:"tags,omitempty"`
 	PreviewURL      string     `json:"preview_url,omitempty" example:"https://minio.example.com/bucket/preview.jpg?token=..."`
 	DownloadURL     string     `json:"download_url,omitempty" example:"https://minio.example.com/bucket/document.pdf?token=..."`

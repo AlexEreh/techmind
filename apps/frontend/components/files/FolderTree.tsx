@@ -2,26 +2,22 @@
 
 import { useState } from 'react';
 import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
 import { Spinner } from '@heroui/spinner';
 import { Divider } from '@heroui/divider';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/modal';
 import { Folder, Document } from '@/lib/api/types';
-import { ChevronDownIcon, ChevronRightIcon, FolderIcon, PlusIcon, FileIcon } from '@/components/icons';
-import { useAuth } from '@/contexts/AuthContext';
-import { foldersApi } from '@/lib/api/folders';
+import { ChevronDownIcon, ChevronRightIcon, FolderIcon, FileIcon, UploadIcon } from '@/components/icons';
 
 interface FolderTreeProps {
   folders: Folder[];
   documents?: Document[];
   onFolderSelect: (folderId: string | null) => void;
   onDocumentSelect?: (document: Document) => void;
+  onUploadClick?: () => void;
   selectedFolderId: string | null;
   selectedDocumentId?: string | null;
   isLoading: boolean;
   highlightedIds?: string[];
   showRoot?: boolean;
-  onFolderCreated?: () => void;
 }
 
 export const FolderTree: React.FC<FolderTreeProps> = ({
@@ -29,18 +25,14 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   documents = [],
   onFolderSelect,
   onDocumentSelect,
+  onUploadClick,
   selectedFolderId,
   selectedDocumentId,
   isLoading,
   highlightedIds = [],
   showRoot = false,
-  onFolderCreated,
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const [newFolderName, setNewFolderName] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const { currentCompany } = useAuth();
-  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => {
@@ -52,29 +44,6 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       }
       return next;
     });
-  };
-
-  const handleCreateFolder = async () => {
-    if (!currentCompany || !newFolderName.trim()) return;
-
-    setIsCreating(true);
-    try {
-      await foldersApi.create({
-        company_id: currentCompany.id,
-        name: newFolderName.trim(),
-        parent_id: selectedFolderId || undefined,
-      });
-      setNewFolderName('');
-      onClose();
-      if (onFolderCreated) {
-        onFolderCreated();
-      }
-    } catch (error) {
-      console.error('Failed to create folder:', error);
-      alert('Не удалось создать папку');
-    } finally {
-      setIsCreating(false);
-    }
   };
 
   const buildTree = (parentId?: string, level = 0): JSX.Element[] => {
@@ -166,57 +135,21 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         </div>
       </div>
 
-      <div className="p-2 border-t border-divider">
-        <Button
-          fullWidth
-          color="primary"
-          variant="flat"
-          startContent={<PlusIcon />}
-          onPress={onOpen}
-          size="sm"
-        >
-          Создать папку
-        </Button>
-      </div>
-
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalContent>
-          <ModalHeader>Создать новую папку</ModalHeader>
-          <ModalBody>
-            <Input
-              label="Имя папки"
-              placeholder="Введите имя папки"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newFolderName.trim()) {
-                  handleCreateFolder();
-                }
-              }}
-            />
-            <p className="text-sm text-default-500">
-              {selectedFolderId
-                ? `Папка будет создана в: ${folders.find(f => f.id === selectedFolderId)?.name || 'выбранной папке'}`
-                : 'Папка будет создана в корне'
-              }
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onClose}>
-              Отмена
-            </Button>
-            <Button
-              color="primary"
-              onPress={handleCreateFolder}
-              isLoading={isCreating}
-              isDisabled={!newFolderName.trim()}
-            >
-              Создать
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {onUploadClick && (
+        <div className="p-2 border-t border-divider">
+          <Button
+            fullWidth
+            color="primary"
+            variant="flat"
+            startContent={<UploadIcon />}
+            onPress={onUploadClick}
+            size="sm"
+          >
+            Загрузить документ
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
+

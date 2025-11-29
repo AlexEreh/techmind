@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"techmind/internal/repo"
 	"techmind/internal/service"
 	"techmind/internal/transport/http"
 	"techmind/pkg/config"
@@ -20,6 +21,7 @@ var Transport = fx.Options(
 			documentTagService service.DocumentTagService,
 			companyUserService service.CompanyUserService,
 			companyService service.CompanyService,
+			userRepo repo.UserRepository,
 			cfg *config.Config,
 		) *http.Server {
 			deps := http.ServerDeps{
@@ -29,6 +31,7 @@ var Transport = fx.Options(
 				DocumentTagService: documentTagService,
 				CompanyUserService: companyUserService,
 				CompanyService:     companyService,
+				UserRepo:           userRepo,
 				Config:             cfg,
 			}
 			return http.NewServer(deps)

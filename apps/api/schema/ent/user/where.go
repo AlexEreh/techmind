@@ -288,6 +288,52 @@ func HasCompanyUsersWith(preds ...predicate.CompanyUser) predicate.User {
 	})
 }
 
+// HasCreatedDocuments applies the HasEdge predicate on the "created_documents" edge.
+func HasCreatedDocuments() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CreatedDocumentsTable, CreatedDocumentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCreatedDocumentsWith applies the HasEdge predicate on the "created_documents" edge with a given conditions (other predicates).
+func HasCreatedDocumentsWith(preds ...predicate.Document) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newCreatedDocumentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUpdatedDocuments applies the HasEdge predicate on the "updated_documents" edge.
+func HasUpdatedDocuments() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UpdatedDocumentsTable, UpdatedDocumentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUpdatedDocumentsWith applies the HasEdge predicate on the "updated_documents" edge with a given conditions (other predicates).
+func HasUpdatedDocumentsWith(preds ...predicate.Document) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newUpdatedDocumentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(sql.AndPredicates(predicates...))

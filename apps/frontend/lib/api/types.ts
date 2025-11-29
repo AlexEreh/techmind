@@ -102,7 +102,10 @@ export interface Document {
   mime_type: string;
   checksum: string;
   sender_id?: string;
+  created_by?: string;
+  updated_by?: string;
   created_at: string;
+  updated_at: string;
   tags?: Tag[];
 }
 

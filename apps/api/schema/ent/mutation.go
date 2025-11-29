@@ -1295,30 +1295,35 @@ func (m *CompanyUserMutation) ResetEdge(name string) error {
 // DocumentMutation represents an operation that mutates the Document nodes in the graph.
 type DocumentMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	name                 *string
-	file_path            *string
-	preview_file_path    *string
-	file_size            *int64
-	addfile_size         *int64
-	mime_type            *string
-	checksum             *string
-	created_at           *time.Time
-	clearedFields        map[string]struct{}
-	company              *uuid.UUID
-	clearedcompany       bool
-	folder               *uuid.UUID
-	clearedfolder        bool
-	sender               *uuid.UUID
-	clearedsender        bool
-	document_tags        map[uuid.UUID]struct{}
-	removeddocument_tags map[uuid.UUID]struct{}
-	cleareddocument_tags bool
-	done                 bool
-	oldValue             func(context.Context) (*Document, error)
-	predicates           []predicate.Document
+	op                     Op
+	typ                    string
+	id                     *uuid.UUID
+	name                   *string
+	file_path              *string
+	preview_file_path      *string
+	file_size              *int64
+	addfile_size           *int64
+	mime_type              *string
+	checksum               *string
+	created_at             *time.Time
+	updated_at             *time.Time
+	clearedFields          map[string]struct{}
+	company                *uuid.UUID
+	clearedcompany         bool
+	folder                 *uuid.UUID
+	clearedfolder          bool
+	sender                 *uuid.UUID
+	clearedsender          bool
+	created_by_user        *uuid.UUID
+	clearedcreated_by_user bool
+	updated_by_user        *uuid.UUID
+	clearedupdated_by_user bool
+	document_tags          map[uuid.UUID]struct{}
+	removeddocument_tags   map[uuid.UUID]struct{}
+	cleareddocument_tags   bool
+	done                   bool
+	oldValue               func(context.Context) (*Document, error)
+	predicates             []predicate.Document
 }
 
 var _ ent.Mutation = (*DocumentMutation)(nil)
@@ -1808,6 +1813,104 @@ func (m *DocumentMutation) ResetSenderID() {
 	delete(m.clearedFields, document.FieldSenderID)
 }
 
+// SetCreatedBy sets the "created_by" field.
+func (m *DocumentMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by_user = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *DocumentMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by_user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the Document entity.
+// If the Document object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DocumentMutation) OldCreatedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *DocumentMutation) ClearCreatedBy() {
+	m.created_by_user = nil
+	m.clearedFields[document.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *DocumentMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[document.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *DocumentMutation) ResetCreatedBy() {
+	m.created_by_user = nil
+	delete(m.clearedFields, document.FieldCreatedBy)
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (m *DocumentMutation) SetUpdatedBy(u uuid.UUID) {
+	m.updated_by_user = &u
+}
+
+// UpdatedBy returns the value of the "updated_by" field in the mutation.
+func (m *DocumentMutation) UpdatedBy() (r uuid.UUID, exists bool) {
+	v := m.updated_by_user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updated_by" field's value of the Document entity.
+// If the Document object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DocumentMutation) OldUpdatedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ClearUpdatedBy clears the value of the "updated_by" field.
+func (m *DocumentMutation) ClearUpdatedBy() {
+	m.updated_by_user = nil
+	m.clearedFields[document.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByCleared returns if the "updated_by" field was cleared in this mutation.
+func (m *DocumentMutation) UpdatedByCleared() bool {
+	_, ok := m.clearedFields[document.FieldUpdatedBy]
+	return ok
+}
+
+// ResetUpdatedBy resets all changes to the "updated_by" field.
+func (m *DocumentMutation) ResetUpdatedBy() {
+	m.updated_by_user = nil
+	delete(m.clearedFields, document.FieldUpdatedBy)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *DocumentMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -1842,6 +1945,42 @@ func (m *DocumentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err e
 // ResetCreatedAt resets all changes to the "created_at" field.
 func (m *DocumentMutation) ResetCreatedAt() {
 	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *DocumentMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *DocumentMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Document entity.
+// If the Document object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DocumentMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *DocumentMutation) ResetUpdatedAt() {
+	m.updated_at = nil
 }
 
 // ClearCompany clears the "company" edge to the Company entity.
@@ -1923,6 +2062,86 @@ func (m *DocumentMutation) SenderIDs() (ids []uuid.UUID) {
 func (m *DocumentMutation) ResetSender() {
 	m.sender = nil
 	m.clearedsender = false
+}
+
+// SetCreatedByUserID sets the "created_by_user" edge to the User entity by id.
+func (m *DocumentMutation) SetCreatedByUserID(id uuid.UUID) {
+	m.created_by_user = &id
+}
+
+// ClearCreatedByUser clears the "created_by_user" edge to the User entity.
+func (m *DocumentMutation) ClearCreatedByUser() {
+	m.clearedcreated_by_user = true
+	m.clearedFields[document.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByUserCleared reports if the "created_by_user" edge to the User entity was cleared.
+func (m *DocumentMutation) CreatedByUserCleared() bool {
+	return m.CreatedByCleared() || m.clearedcreated_by_user
+}
+
+// CreatedByUserID returns the "created_by_user" edge ID in the mutation.
+func (m *DocumentMutation) CreatedByUserID() (id uuid.UUID, exists bool) {
+	if m.created_by_user != nil {
+		return *m.created_by_user, true
+	}
+	return
+}
+
+// CreatedByUserIDs returns the "created_by_user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatedByUserID instead. It exists only for internal usage by the builders.
+func (m *DocumentMutation) CreatedByUserIDs() (ids []uuid.UUID) {
+	if id := m.created_by_user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreatedByUser resets all changes to the "created_by_user" edge.
+func (m *DocumentMutation) ResetCreatedByUser() {
+	m.created_by_user = nil
+	m.clearedcreated_by_user = false
+}
+
+// SetUpdatedByUserID sets the "updated_by_user" edge to the User entity by id.
+func (m *DocumentMutation) SetUpdatedByUserID(id uuid.UUID) {
+	m.updated_by_user = &id
+}
+
+// ClearUpdatedByUser clears the "updated_by_user" edge to the User entity.
+func (m *DocumentMutation) ClearUpdatedByUser() {
+	m.clearedupdated_by_user = true
+	m.clearedFields[document.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByUserCleared reports if the "updated_by_user" edge to the User entity was cleared.
+func (m *DocumentMutation) UpdatedByUserCleared() bool {
+	return m.UpdatedByCleared() || m.clearedupdated_by_user
+}
+
+// UpdatedByUserID returns the "updated_by_user" edge ID in the mutation.
+func (m *DocumentMutation) UpdatedByUserID() (id uuid.UUID, exists bool) {
+	if m.updated_by_user != nil {
+		return *m.updated_by_user, true
+	}
+	return
+}
+
+// UpdatedByUserIDs returns the "updated_by_user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UpdatedByUserID instead. It exists only for internal usage by the builders.
+func (m *DocumentMutation) UpdatedByUserIDs() (ids []uuid.UUID) {
+	if id := m.updated_by_user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUpdatedByUser resets all changes to the "updated_by_user" edge.
+func (m *DocumentMutation) ResetUpdatedByUser() {
+	m.updated_by_user = nil
+	m.clearedupdated_by_user = false
 }
 
 // AddDocumentTagIDs adds the "document_tags" edge to the DocumentTag entity by ids.
@@ -2013,7 +2232,7 @@ func (m *DocumentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DocumentMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 13)
 	if m.company != nil {
 		fields = append(fields, document.FieldCompanyID)
 	}
@@ -2041,8 +2260,17 @@ func (m *DocumentMutation) Fields() []string {
 	if m.sender != nil {
 		fields = append(fields, document.FieldSenderID)
 	}
+	if m.created_by_user != nil {
+		fields = append(fields, document.FieldCreatedBy)
+	}
+	if m.updated_by_user != nil {
+		fields = append(fields, document.FieldUpdatedBy)
+	}
 	if m.created_at != nil {
 		fields = append(fields, document.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, document.FieldUpdatedAt)
 	}
 	return fields
 }
@@ -2070,8 +2298,14 @@ func (m *DocumentMutation) Field(name string) (ent.Value, bool) {
 		return m.Checksum()
 	case document.FieldSenderID:
 		return m.SenderID()
+	case document.FieldCreatedBy:
+		return m.CreatedBy()
+	case document.FieldUpdatedBy:
+		return m.UpdatedBy()
 	case document.FieldCreatedAt:
 		return m.CreatedAt()
+	case document.FieldUpdatedAt:
+		return m.UpdatedAt()
 	}
 	return nil, false
 }
@@ -2099,8 +2333,14 @@ func (m *DocumentMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldChecksum(ctx)
 	case document.FieldSenderID:
 		return m.OldSenderID(ctx)
+	case document.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case document.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
 	case document.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
+	case document.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Document field %s", name)
 }
@@ -2173,12 +2413,33 @@ func (m *DocumentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSenderID(v)
 		return nil
+	case document.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case document.FieldUpdatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
 	case document.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
+		return nil
+	case document.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Document field %s", name)
@@ -2234,6 +2495,12 @@ func (m *DocumentMutation) ClearedFields() []string {
 	if m.FieldCleared(document.FieldSenderID) {
 		fields = append(fields, document.FieldSenderID)
 	}
+	if m.FieldCleared(document.FieldCreatedBy) {
+		fields = append(fields, document.FieldCreatedBy)
+	}
+	if m.FieldCleared(document.FieldUpdatedBy) {
+		fields = append(fields, document.FieldUpdatedBy)
+	}
 	return fields
 }
 
@@ -2256,6 +2523,12 @@ func (m *DocumentMutation) ClearField(name string) error {
 		return nil
 	case document.FieldSenderID:
 		m.ClearSenderID()
+		return nil
+	case document.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case document.FieldUpdatedBy:
+		m.ClearUpdatedBy()
 		return nil
 	}
 	return fmt.Errorf("unknown Document nullable field %s", name)
@@ -2292,8 +2565,17 @@ func (m *DocumentMutation) ResetField(name string) error {
 	case document.FieldSenderID:
 		m.ResetSenderID()
 		return nil
+	case document.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case document.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
 	case document.FieldCreatedAt:
 		m.ResetCreatedAt()
+		return nil
+	case document.FieldUpdatedAt:
+		m.ResetUpdatedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Document field %s", name)
@@ -2301,7 +2583,7 @@ func (m *DocumentMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DocumentMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
 	if m.company != nil {
 		edges = append(edges, document.EdgeCompany)
 	}
@@ -2310,6 +2592,12 @@ func (m *DocumentMutation) AddedEdges() []string {
 	}
 	if m.sender != nil {
 		edges = append(edges, document.EdgeSender)
+	}
+	if m.created_by_user != nil {
+		edges = append(edges, document.EdgeCreatedByUser)
+	}
+	if m.updated_by_user != nil {
+		edges = append(edges, document.EdgeUpdatedByUser)
 	}
 	if m.document_tags != nil {
 		edges = append(edges, document.EdgeDocumentTags)
@@ -2333,6 +2621,14 @@ func (m *DocumentMutation) AddedIDs(name string) []ent.Value {
 		if id := m.sender; id != nil {
 			return []ent.Value{*id}
 		}
+	case document.EdgeCreatedByUser:
+		if id := m.created_by_user; id != nil {
+			return []ent.Value{*id}
+		}
+	case document.EdgeUpdatedByUser:
+		if id := m.updated_by_user; id != nil {
+			return []ent.Value{*id}
+		}
 	case document.EdgeDocumentTags:
 		ids := make([]ent.Value, 0, len(m.document_tags))
 		for id := range m.document_tags {
@@ -2345,7 +2641,7 @@ func (m *DocumentMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DocumentMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
 	if m.removeddocument_tags != nil {
 		edges = append(edges, document.EdgeDocumentTags)
 	}
@@ -2368,7 +2664,7 @@ func (m *DocumentMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DocumentMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
 	if m.clearedcompany {
 		edges = append(edges, document.EdgeCompany)
 	}
@@ -2377,6 +2673,12 @@ func (m *DocumentMutation) ClearedEdges() []string {
 	}
 	if m.clearedsender {
 		edges = append(edges, document.EdgeSender)
+	}
+	if m.clearedcreated_by_user {
+		edges = append(edges, document.EdgeCreatedByUser)
+	}
+	if m.clearedupdated_by_user {
+		edges = append(edges, document.EdgeUpdatedByUser)
 	}
 	if m.cleareddocument_tags {
 		edges = append(edges, document.EdgeDocumentTags)
@@ -2394,6 +2696,10 @@ func (m *DocumentMutation) EdgeCleared(name string) bool {
 		return m.clearedfolder
 	case document.EdgeSender:
 		return m.clearedsender
+	case document.EdgeCreatedByUser:
+		return m.clearedcreated_by_user
+	case document.EdgeUpdatedByUser:
+		return m.clearedupdated_by_user
 	case document.EdgeDocumentTags:
 		return m.cleareddocument_tags
 	}
@@ -2413,6 +2719,12 @@ func (m *DocumentMutation) ClearEdge(name string) error {
 	case document.EdgeSender:
 		m.ClearSender()
 		return nil
+	case document.EdgeCreatedByUser:
+		m.ClearCreatedByUser()
+		return nil
+	case document.EdgeUpdatedByUser:
+		m.ClearUpdatedByUser()
+		return nil
 	}
 	return fmt.Errorf("unknown Document unique edge %s", name)
 }
@@ -2429,6 +2741,12 @@ func (m *DocumentMutation) ResetEdge(name string) error {
 		return nil
 	case document.EdgeSender:
 		m.ResetSender()
+		return nil
+	case document.EdgeCreatedByUser:
+		m.ResetCreatedByUser()
+		return nil
+	case document.EdgeUpdatedByUser:
+		m.ResetUpdatedByUser()
 		return nil
 	case document.EdgeDocumentTags:
 		m.ResetDocumentTags()
@@ -4948,19 +5266,25 @@ func (m *TagMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	name                 *string
-	email                *string
-	password             *string
-	clearedFields        map[string]struct{}
-	company_users        map[uuid.UUID]struct{}
-	removedcompany_users map[uuid.UUID]struct{}
-	clearedcompany_users bool
-	done                 bool
-	oldValue             func(context.Context) (*User, error)
-	predicates           []predicate.User
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	name                     *string
+	email                    *string
+	password                 *string
+	clearedFields            map[string]struct{}
+	company_users            map[uuid.UUID]struct{}
+	removedcompany_users     map[uuid.UUID]struct{}
+	clearedcompany_users     bool
+	created_documents        map[uuid.UUID]struct{}
+	removedcreated_documents map[uuid.UUID]struct{}
+	clearedcreated_documents bool
+	updated_documents        map[uuid.UUID]struct{}
+	removedupdated_documents map[uuid.UUID]struct{}
+	clearedupdated_documents bool
+	done                     bool
+	oldValue                 func(context.Context) (*User, error)
+	predicates               []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -5229,6 +5553,114 @@ func (m *UserMutation) ResetCompanyUsers() {
 	m.removedcompany_users = nil
 }
 
+// AddCreatedDocumentIDs adds the "created_documents" edge to the Document entity by ids.
+func (m *UserMutation) AddCreatedDocumentIDs(ids ...uuid.UUID) {
+	if m.created_documents == nil {
+		m.created_documents = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.created_documents[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCreatedDocuments clears the "created_documents" edge to the Document entity.
+func (m *UserMutation) ClearCreatedDocuments() {
+	m.clearedcreated_documents = true
+}
+
+// CreatedDocumentsCleared reports if the "created_documents" edge to the Document entity was cleared.
+func (m *UserMutation) CreatedDocumentsCleared() bool {
+	return m.clearedcreated_documents
+}
+
+// RemoveCreatedDocumentIDs removes the "created_documents" edge to the Document entity by IDs.
+func (m *UserMutation) RemoveCreatedDocumentIDs(ids ...uuid.UUID) {
+	if m.removedcreated_documents == nil {
+		m.removedcreated_documents = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.created_documents, ids[i])
+		m.removedcreated_documents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCreatedDocuments returns the removed IDs of the "created_documents" edge to the Document entity.
+func (m *UserMutation) RemovedCreatedDocumentsIDs() (ids []uuid.UUID) {
+	for id := range m.removedcreated_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CreatedDocumentsIDs returns the "created_documents" edge IDs in the mutation.
+func (m *UserMutation) CreatedDocumentsIDs() (ids []uuid.UUID) {
+	for id := range m.created_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCreatedDocuments resets all changes to the "created_documents" edge.
+func (m *UserMutation) ResetCreatedDocuments() {
+	m.created_documents = nil
+	m.clearedcreated_documents = false
+	m.removedcreated_documents = nil
+}
+
+// AddUpdatedDocumentIDs adds the "updated_documents" edge to the Document entity by ids.
+func (m *UserMutation) AddUpdatedDocumentIDs(ids ...uuid.UUID) {
+	if m.updated_documents == nil {
+		m.updated_documents = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.updated_documents[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUpdatedDocuments clears the "updated_documents" edge to the Document entity.
+func (m *UserMutation) ClearUpdatedDocuments() {
+	m.clearedupdated_documents = true
+}
+
+// UpdatedDocumentsCleared reports if the "updated_documents" edge to the Document entity was cleared.
+func (m *UserMutation) UpdatedDocumentsCleared() bool {
+	return m.clearedupdated_documents
+}
+
+// RemoveUpdatedDocumentIDs removes the "updated_documents" edge to the Document entity by IDs.
+func (m *UserMutation) RemoveUpdatedDocumentIDs(ids ...uuid.UUID) {
+	if m.removedupdated_documents == nil {
+		m.removedupdated_documents = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.updated_documents, ids[i])
+		m.removedupdated_documents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUpdatedDocuments returns the removed IDs of the "updated_documents" edge to the Document entity.
+func (m *UserMutation) RemovedUpdatedDocumentsIDs() (ids []uuid.UUID) {
+	for id := range m.removedupdated_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UpdatedDocumentsIDs returns the "updated_documents" edge IDs in the mutation.
+func (m *UserMutation) UpdatedDocumentsIDs() (ids []uuid.UUID) {
+	for id := range m.updated_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUpdatedDocuments resets all changes to the "updated_documents" edge.
+func (m *UserMutation) ResetUpdatedDocuments() {
+	m.updated_documents = nil
+	m.clearedupdated_documents = false
+	m.removedupdated_documents = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -5396,9 +5828,15 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.company_users != nil {
 		edges = append(edges, user.EdgeCompanyUsers)
+	}
+	if m.created_documents != nil {
+		edges = append(edges, user.EdgeCreatedDocuments)
+	}
+	if m.updated_documents != nil {
+		edges = append(edges, user.EdgeUpdatedDocuments)
 	}
 	return edges
 }
@@ -5413,15 +5851,33 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeCreatedDocuments:
+		ids := make([]ent.Value, 0, len(m.created_documents))
+		for id := range m.created_documents {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeUpdatedDocuments:
+		ids := make([]ent.Value, 0, len(m.updated_documents))
+		for id := range m.updated_documents {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.removedcompany_users != nil {
 		edges = append(edges, user.EdgeCompanyUsers)
+	}
+	if m.removedcreated_documents != nil {
+		edges = append(edges, user.EdgeCreatedDocuments)
+	}
+	if m.removedupdated_documents != nil {
+		edges = append(edges, user.EdgeUpdatedDocuments)
 	}
 	return edges
 }
@@ -5436,15 +5892,33 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeCreatedDocuments:
+		ids := make([]ent.Value, 0, len(m.removedcreated_documents))
+		for id := range m.removedcreated_documents {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeUpdatedDocuments:
+		ids := make([]ent.Value, 0, len(m.removedupdated_documents))
+		for id := range m.removedupdated_documents {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.clearedcompany_users {
 		edges = append(edges, user.EdgeCompanyUsers)
+	}
+	if m.clearedcreated_documents {
+		edges = append(edges, user.EdgeCreatedDocuments)
+	}
+	if m.clearedupdated_documents {
+		edges = append(edges, user.EdgeUpdatedDocuments)
 	}
 	return edges
 }
@@ -5455,6 +5929,10 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeCompanyUsers:
 		return m.clearedcompany_users
+	case user.EdgeCreatedDocuments:
+		return m.clearedcreated_documents
+	case user.EdgeUpdatedDocuments:
+		return m.clearedupdated_documents
 	}
 	return false
 }
@@ -5473,6 +5951,12 @@ func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
 	case user.EdgeCompanyUsers:
 		m.ResetCompanyUsers()
+		return nil
+	case user.EdgeCreatedDocuments:
+		m.ResetCreatedDocuments()
+		return nil
+	case user.EdgeUpdatedDocuments:
+		m.ResetUpdatedDocuments()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

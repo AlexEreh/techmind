@@ -33,6 +33,14 @@ func NewUpdateHandler(documentService service.DocumentService) *UpdateHandler {
 // @Failure      500 {object} handlers.ErrorResponse "Внутренняя ошибка сервера"
 // @Router       /private/documents/{id} [put]
 func (h *UpdateHandler) Handle(c fiber.Ctx) error {
+	// Получаем user_id из контекста (установлено JWT middleware)
+	userID, ok := c.Locals("user_id").(uuid.UUID)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(handlers.ErrorResponse{
+			Error: "unauthorized",
+		})
+	}
+
 	idParam := c.Params("id")
 	documentID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -52,7 +60,10 @@ func (h *UpdateHandler) Handle(c fiber.Ctx) error {
 		Name:     req.Name,
 		FolderID: req.FolderID,
 		SenderID: req.SenderID,
+		UserID:   userID,
 	}
+
+	// ...existing code...
 
 	document, err := h.documentService.Update(c.Context(), documentID, input)
 	if err != nil {
@@ -72,6 +83,9 @@ func (h *UpdateHandler) Handle(c fiber.Ctx) error {
 		FileSize:        document.FileSize,
 		MimeType:        document.MimeType,
 		Checksum:        document.Checksum,
+		CreatedBy:       document.CreatedBy,
+		UpdatedBy:       document.UpdatedBy,
 		CreatedAt:       document.CreatedAt,
+		UpdatedAt:       document.UpdatedAt,
 	})
 }

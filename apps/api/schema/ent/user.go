@@ -33,9 +33,13 @@ type User struct {
 type UserEdges struct {
 	// CompanyUsers holds the value of the company_users edge.
 	CompanyUsers []*CompanyUser `json:"company_users,omitempty"`
+	// CreatedDocuments holds the value of the created_documents edge.
+	CreatedDocuments []*Document `json:"created_documents,omitempty"`
+	// UpdatedDocuments holds the value of the updated_documents edge.
+	UpdatedDocuments []*Document `json:"updated_documents,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [3]bool
 }
 
 // CompanyUsersOrErr returns the CompanyUsers value or an error if the edge
@@ -45,6 +49,24 @@ func (e UserEdges) CompanyUsersOrErr() ([]*CompanyUser, error) {
 		return e.CompanyUsers, nil
 	}
 	return nil, &NotLoadedError{edge: "company_users"}
+}
+
+// CreatedDocumentsOrErr returns the CreatedDocuments value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) CreatedDocumentsOrErr() ([]*Document, error) {
+	if e.loadedTypes[1] {
+		return e.CreatedDocuments, nil
+	}
+	return nil, &NotLoadedError{edge: "created_documents"}
+}
+
+// UpdatedDocumentsOrErr returns the UpdatedDocuments value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) UpdatedDocumentsOrErr() ([]*Document, error) {
+	if e.loadedTypes[2] {
+		return e.UpdatedDocuments, nil
+	}
+	return nil, &NotLoadedError{edge: "updated_documents"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -111,6 +133,16 @@ func (_m *User) Value(name string) (ent.Value, error) {
 // QueryCompanyUsers queries the "company_users" edge of the User entity.
 func (_m *User) QueryCompanyUsers() *CompanyUserQuery {
 	return NewUserClient(_m.config).QueryCompanyUsers(_m)
+}
+
+// QueryCreatedDocuments queries the "created_documents" edge of the User entity.
+func (_m *User) QueryCreatedDocuments() *DocumentQuery {
+	return NewUserClient(_m.config).QueryCreatedDocuments(_m)
+}
+
+// QueryUpdatedDocuments queries the "updated_documents" edge of the User entity.
+func (_m *User) QueryUpdatedDocuments() *DocumentQuery {
+	return NewUserClient(_m.config).QueryUpdatedDocuments(_m)
 }
 
 // Update returns a builder for updating this User.

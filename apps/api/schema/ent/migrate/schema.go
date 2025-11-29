@@ -56,9 +56,12 @@ var (
 		{Name: "mime_type", Type: field.TypeString},
 		{Name: "checksum", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "company_id", Type: field.TypeUUID},
 		{Name: "folder_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "sender_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "updated_by", Type: field.TypeUUID, Nullable: true},
 	}
 	// DocumentsTable holds the schema information for the "documents" table.
 	DocumentsTable = &schema.Table{
@@ -68,20 +71,32 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "documents_companies_documents",
-				Columns:    []*schema.Column{DocumentsColumns[8]},
+				Columns:    []*schema.Column{DocumentsColumns[9]},
 				RefColumns: []*schema.Column{CompaniesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "documents_folders_documents",
-				Columns:    []*schema.Column{DocumentsColumns[9]},
+				Columns:    []*schema.Column{DocumentsColumns[10]},
 				RefColumns: []*schema.Column{FoldersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "documents_senders_documents",
-				Columns:    []*schema.Column{DocumentsColumns[10]},
+				Columns:    []*schema.Column{DocumentsColumns[11]},
 				RefColumns: []*schema.Column{SendersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "documents_users_created_documents",
+				Columns:    []*schema.Column{DocumentsColumns[12]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "documents_users_updated_documents",
+				Columns:    []*schema.Column{DocumentsColumns[13]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -243,6 +258,8 @@ func init() {
 	DocumentsTable.ForeignKeys[0].RefTable = CompaniesTable
 	DocumentsTable.ForeignKeys[1].RefTable = FoldersTable
 	DocumentsTable.ForeignKeys[2].RefTable = SendersTable
+	DocumentsTable.ForeignKeys[3].RefTable = UsersTable
+	DocumentsTable.ForeignKeys[4].RefTable = UsersTable
 	FoldersTable.ForeignKeys[0].RefTable = CompaniesTable
 	FoldersTable.ForeignKeys[1].RefTable = FoldersTable
 	TagsTable.ForeignKeys[0].RefTable = CompaniesTable

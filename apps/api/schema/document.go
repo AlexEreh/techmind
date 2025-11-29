@@ -39,9 +39,18 @@ func (Document) Fields() []ent.Field {
 		field.UUID("sender_id", uuid.UUID{}).
 			Optional().
 			Nillable(),
+		field.UUID("created_by", uuid.UUID{}).
+			Optional().
+			Nillable(),
+		field.UUID("updated_by", uuid.UUID{}).
+			Optional().
+			Nillable(),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
+		field.Time("updated_at").
+			Default(time.Now).
+			UpdateDefault(time.Now),
 	}
 }
 
@@ -60,6 +69,14 @@ func (Document) Edges() []ent.Edge {
 		edge.From("sender", Sender.Type).
 			Ref("documents").
 			Field("sender_id").
+			Unique(),
+		edge.From("created_by_user", User.Type).
+			Ref("created_documents").
+			Field("created_by").
+			Unique(),
+		edge.From("updated_by_user", User.Type).
+			Ref("updated_documents").
+			Field("updated_by").
 			Unique(),
 		edge.To("document_tags", DocumentTag.Type),
 	}

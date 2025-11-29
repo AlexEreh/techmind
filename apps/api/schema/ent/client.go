@@ -785,6 +785,38 @@ func (c *DocumentClient) QuerySender(_m *Document) *SenderQuery {
 	return query
 }
 
+// QueryCreatedByUser queries the created_by_user edge of a Document.
+func (c *DocumentClient) QueryCreatedByUser(_m *Document) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(document.Table, document.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, document.CreatedByUserTable, document.CreatedByUserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUpdatedByUser queries the updated_by_user edge of a Document.
+func (c *DocumentClient) QueryUpdatedByUser(_m *Document) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(document.Table, document.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, document.UpdatedByUserTable, document.UpdatedByUserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryDocumentTags queries the document_tags edge of a Document.
 func (c *DocumentClient) QueryDocumentTags(_m *Document) *DocumentTagQuery {
 	query := (&DocumentTagClient{config: c.config}).Query()
@@ -1619,6 +1651,38 @@ func (c *UserClient) QueryCompanyUsers(_m *User) *CompanyUserQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(companyuser.Table, companyuser.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.CompanyUsersTable, user.CompanyUsersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCreatedDocuments queries the created_documents edge of a User.
+func (c *UserClient) QueryCreatedDocuments(_m *User) *DocumentQuery {
+	query := (&DocumentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(document.Table, document.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.CreatedDocumentsTable, user.CreatedDocumentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUpdatedDocuments queries the updated_documents edge of a User.
+func (c *UserClient) QueryUpdatedDocuments(_m *User) *DocumentQuery {
+	query := (&DocumentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(document.Table, document.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.UpdatedDocumentsTable, user.UpdatedDocumentsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+
 	"techmind/schema/ent"
 
 	"github.com/google/uuid"
@@ -98,11 +99,11 @@ type SenderRepository interface {
 // DocumentRepository defines document-related database operations
 type DocumentRepository interface {
 	// Create creates a new document
-	Create(ctx context.Context, companyID uuid.UUID, folderID *uuid.UUID, name string, filePath string, fileSize int64, mimeType string, checksum string) (*ent.Document, error)
+	Create(ctx context.Context, companyID uuid.UUID, folderID *uuid.UUID, name string, filePath string, fileSize int64, mimeType string, checksum string, createdBy uuid.UUID) (*ent.Document, error)
 	// GetByID retrieves a document by ID
 	GetByID(ctx context.Context, id uuid.UUID) (*ent.Document, error)
 	// Update updates an existing document
-	Update(ctx context.Context, id uuid.UUID, folderID *uuid.UUID, senderID *uuid.UUID, name string) (*ent.Document, error)
+	Update(ctx context.Context, id uuid.UUID, folderID *uuid.UUID, senderID *uuid.UUID, name string, updatedBy uuid.UUID) (*ent.Document, error)
 	// UpdatePreviewPath updates the preview file path of a document
 	UpdatePreviewPath(ctx context.Context, id uuid.UUID, previewFilePath string) error
 	// Delete deletes a document by ID
