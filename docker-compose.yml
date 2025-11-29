@@ -1,58 +1,87 @@
 version: "3"
 
 services:
-  backend:
-    image: ghcr.io/alexereh/lazyecm/api:latest
-    volumes:
-      - "./prod.yml:/app/prod.yml"
-      - "./auth:/app/auth"
+  postgres:
+    image: postgres:17.5
     expose:
-      - "58080:58080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - shared_network
+
+  minio:
+    image: minio/minio:latest
+    expose:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    networks:
+      - shared_network
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    expose:
+      - "3030:3000"
+    command:
+      - "gotenberg"
+      - "--api-timeout=60s"
+      - "--log-level=info"
+    networks:
+      - shared_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    expose:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=true
+      - ELASTIC_PASSWORD=changeme
+      - xpack.security.http.ssl.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - shared_network
+
+  sajaridocd:
+    image: sajari/docd:latest
+    command: ["/docd", "-addr", ":8888"]
+    expose:
+      - "8888:8888"
+    networks:
+      - shared_network
 
   frontend:
     image: ghcr.io/alexereh/lazyecm/frontend:latest
     expose:
       - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
+    networks:
+      - shared_network
+
+  api:
+    image: ghcr.io/alexereh/lazyecm/api:latest
+    expose:
+      - "58080:8080"
+    networks:
+      - shared_network
 
   nginx:
-    image: nginx:stable-alpine
-    container_name: 1w_panel_nginx
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"    # максимум на один файл
-        max-file: "3"
+    image: nginx:latest
     ports:
-      - "443:443"
+      - "8050:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certs:/etc/nginx/certs:ro
-    restart: unless-stopped
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - shared_network
 
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - "5080:8080"
-
-  postgres:
-    image: postgres:17.5
-    expose:
-      - "5432:5432"
-    volumes:
-      - "./pgdata:/var/lib/postgresql/data"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgressdljkmbvljhkd
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
+networks:
+  shared_network:
+    driver: bridge

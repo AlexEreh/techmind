@@ -80,24 +80,6 @@
             </PendingDiffInfo>
           </value>
         </entry>
-        <entry key="$PROJECT_DIR$/apps/frontend/Dockerfile">
-          <value>
-            <PendingDiffInfo>
-              <option name="filePath" value="$PROJECT_DIR$/apps/frontend/Dockerfile" />
-              <option name="originalContent" value="# Dockerfile for Next.js frontend&#10;FROM node:22.21.1-alpine AS base&#10;&#10;# Ensure pnpm is available in the base image&#10;RUN corepack enable &amp;&amp; corepack prepare pnpm@latest --activate&#10;&#10;# Build stage: install runtime compat, install deps and build the app&#10;FROM base AS builder&#10;RUN apk add --no-cache libc6-compat&#10;WORKDIR /app&#10;&#10;# copy lockfile(s) and package manifest first for better layer caching&#10;COPY package.json pnpm-lock.yaml* package-lock.json* ./&#10;RUN pnpm install&#10;&#10;# copy source and build&#10;COPY . .&#10;ENV NEXT_TELEMETRY_DISABLED 1&#10;RUN pnpm run build&#10;&#10;# Production image, copy only runtime artifacts and run&#10;FROM base AS runner&#10;WORKDIR /app&#10;&#10;ENV NODE_ENV=production&#10;ENV NEXT_TELEMETRY_DISABLED=1&#10;&#10;RUN addgroup --system --gid 1001 nodejs &amp;&amp; adduser --system --uid 1001 nextjs&#10;&#10;# Automatically leverage output traces to reduce image size&#10;COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./&#10;COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static&#10;&#10;USER nextjs&#10;&#10;EXPOSE 3000&#10;&#10;ENV PORT=3000&#10;ENV HOSTNAME=&quot;0.0.0.0&quot;&#10;&#10;CMD [&quot;node&quot;, &quot;server.js&quot;]&#10;" />
-              <option name="updatedContent" value="# Dockerfile for Next.js frontend&#10;FROM node:22.21.1-alpine AS base&#10;&#10;# Ensure pnpm is available in the base image&#10;RUN corepack enable &amp;&amp; corepack prepare pnpm@latest --activate&#10;&#10;# Build stage: install runtime compat, install deps and build the app&#10;FROM base AS builder&#10;RUN apk add --no-cache libc6-compat&#10;WORKDIR /app&#10;&#10;# copy lockfile(s) and package manifest first for better layer caching&#10;COPY package.json pnpm-lock.yaml* package-lock.json* ./&#10;RUN pnpm install&#10;&#10;# copy source and build&#10;COPY . .&#10;ENV NEXT_TELEMETRY_DISABLED 1&#10;RUN pnpm run build&#10;&#10;# Production image, copy only runtime artifacts and run&#10;FROM base AS runner&#10;WORKDIR /app&#10;&#10;ENV NODE_ENV=production&#10;ENV NEXT_TELEMETRY_DISABLED=1&#10;&#10;RUN addgroup --system --gid 1001 nodejs &amp;&amp; adduser --system --uid 1001 nextjs&#10;&#10;# Automatically leverage output traces to reduce image size&#10;COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./&#10;COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static&#10;COPY --from=builder --chown=nextjs:nodejs /app/public ./public&#10;&#10;USER nextjs&#10;&#10;EXPOSE 3000&#10;&#10;ENV PORT=3000&#10;ENV HOSTNAME=&quot;0.0.0.0&quot;&#10;&#10;CMD [&quot;node&quot;, &quot;server.js&quot;]&#10;" />
-            </PendingDiffInfo>
-          </value>
-        </entry>
-        <entry key="$PROJECT_DIR$/apps/frontend/next.config.js">
-          <value>
-            <PendingDiffInfo>
-              <option name="filePath" value="$PROJECT_DIR$/apps/frontend/next.config.js" />
-              <option name="originalContent" value="/** @type {import('next').NextConfig} */&#10;const nextConfig = {&#10;    async rewrites() {&#10;        return [&#10;            {&#10;                source: '/api/:path*',&#10;                destination: 'http://127.0.0.1:58080/api/v1/:path*',&#10;            },&#10;        ]&#10;    },&#10;    turbopack: {&#10;        root: process.cwd(),&#10;    }&#10;};&#10;&#10;module.exports = nextConfig;&#10;" />
-              <option name="updatedContent" value="/** @type {import('next').NextConfig} */&#10;const nextConfig = {&#10;    output: 'standalone',&#10;    async rewrites() {&#10;        return [&#10;            {&#10;                source: '/api/:path*',&#10;                destination: 'http://127.0.0.1:58080/api/v1/:path*',&#10;            },&#10;        ]&#10;    },&#10;    turbopack: {&#10;        root: process.cwd(),&#10;    }&#10;};&#10;&#10;module.exports = nextConfig;&#13;&#10;" />
-            </PendingDiffInfo>
-          </value>
-        </entry>
         <entry key="$PROJECT_DIR$/docker-compose.dev.yml">
           <value>
             <PendingDiffInfo>

@@ -9,6 +9,7 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+	"techmind/pkg/config"
 	"time"
 
 	"techmind/internal/repo"
@@ -104,6 +105,7 @@ type documentService struct {
 	bucketName          string
 	gotenbergClient     *gotenberg.Client
 	elasticsearchClient *elasticsearch.Client
+	config              *config.Config
 }
 
 func NewService(
@@ -114,6 +116,7 @@ func NewService(
 	minioClient *minio.Client,
 	gotenbergClient *gotenberg.Client,
 	elasticsearchClient *elasticsearch.Client,
+	config *config.Config,
 ) service.DocumentService {
 
 	return &documentService{
@@ -125,6 +128,7 @@ func NewService(
 		bucketName:          "documents",
 		gotenbergClient:     gotenbergClient,
 		elasticsearchClient: elasticsearchClient,
+		config:              config,
 	}
 }
 
@@ -379,6 +383,8 @@ func (s *documentService) GetDownloadURL(ctx context.Context, documentID uuid.UU
 	if err != nil {
 		return "", fmt.Errorf("failed to generate download url: %w", err)
 	}
+	url.Scheme = s.config.MinIO.URLScheme
+	url.Host = s.config.MinIO.URL
 
 	return url.String(), nil
 }
@@ -400,6 +406,8 @@ func (s *documentService) GetPreviewURL(ctx context.Context, documentID uuid.UUI
 	if err != nil {
 		return "", fmt.Errorf("failed to generate preview url: %w", err)
 	}
+	url.Scheme = s.config.MinIO.URLScheme
+	url.Host = s.config.MinIO.URL
 
 	return url.String(), nil
 }

@@ -15,6 +15,8 @@ type Config struct {
 	} `yaml:"postgres" mapstructure:"postgres"`
 	MinIO struct {
 		Endpoint  string `yaml:"endpoint" mapstructure:"endpoint"`
+		URL       string `yaml:"url" mapstructure:"url"`
+		URLScheme string `yaml:"url_scheme" mapstructure:"url_scheme"`
 		AccessKey string `yaml:"access_key" mapstructure:"access_key"`
 		SecretKey string `yaml:"secret_key" mapstructure:"secret_key"`
 		UseSSL    bool   `yaml:"use_ssl" mapstructure:"use_ssl"`
