@@ -104,7 +104,7 @@ export const TagsManagement: React.FC = () => {
               Отмена
             </Button>
             <Button
-              color="primary"
+              color="default"
               onPress={handleCreateTag}
               isLoading={isCreating}
               isDisabled={!newTagName.trim()}

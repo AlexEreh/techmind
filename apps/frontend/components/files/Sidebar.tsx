@@ -90,25 +90,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
         <Button
           isIconOnly
           variant={currentView === 'profile' ? 'solid' : 'light'}
-          color={currentView === 'profile' ? 'primary' : 'default'}
+          color={currentView === 'profile' ? 'default' : 'default'}
           onPress={() => router.push('/profile')}
         >
           <UserIcon className="w-5 h-5" />
         </Button>
       </Tooltip>
 
-      {currentView === 'files' && onUploadClick && (
-        <Tooltip content="Загрузить документ" placement="right">
-          <Button
-            isIconOnly
-            color="success"
-            variant="flat"
-            onPress={onUploadClick}
-          >
-            <UploadIcon className="w-5 h-5" />
-          </Button>
-        </Tooltip>
-      )}
+      {/*{currentView === 'files' && onUploadClick && (*/}
+      {/*  <Tooltip content="Загрузить документ" placement="right">*/}
+      {/*    <Button*/}
+      {/*      isIconOnly*/}
+      {/*      color="success"*/}
+      {/*      variant="flat"*/}
+      {/*      onPress={onUploadClick}*/}
+      {/*    >*/}
+      {/*      <UploadIcon className="w-5 h-5" />*/}
+      {/*    </Button>*/}
+      {/*  </Tooltip>*/}
+      {/*)}*/}
     </div>
   );
 };

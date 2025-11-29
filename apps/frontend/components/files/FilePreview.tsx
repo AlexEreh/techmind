@@ -1,9 +1,7 @@
 'use client';
 
-import { memo } from 'react';
+import {memo} from 'react';
 import { Document } from '@/lib/api/types';
-import { Card, CardBody } from '@heroui/card';
-import { Image } from '@heroui/image';
 
 interface FilePreviewProps {
   document: Document | null;
@@ -20,7 +18,6 @@ const FilePreviewComponent: React.FC<FilePreviewProps> = ({ document }) => {
     );
   }
 
-  const isImage = document.mime_type.startsWith('image/');
   const isPdf = document.mime_type === 'application/pdf';
 
 
@@ -72,15 +69,26 @@ const FilePreviewComponent: React.FC<FilePreviewProps> = ({ document }) => {
   );
 };
 
-// Мемоизируем компонент, сравнивая только ID и download_url документа
-export const FilePreview = memo(FilePreviewComponent, (prevProps, nextProps) => {
-  if (prevProps.document === null && nextProps.document === null) return true;
-  if (prevProps.document === null || nextProps.document === null) return false;
+export default FilePreviewComponent;
 
-  // Ререндерим только если изменился ID или URL документа
-  return (
-    prevProps.document.id === nextProps.document.id &&
-    prevProps.document.download_url === nextProps.document.download_url
-  );
-});
-
+// Мемоизируем компонент, сравнивая только свойства, которые влияют на preview
+// export const FilePreview = memo(FilePreviewComponent, (prevProps, nextProps) => {
+//   // Если оба null, не перерисовываем
+//   if (prevProps.document === null && nextProps.document === null) {
+//     return true;
+//   }
+//
+//   // Если один null, а другой нет, перерисовываем
+//   if (prevProps.document === null || nextProps.document === null) {
+//     return false;
+//   }
+//
+//   // Сравниваем только свойства, которые влияют на отображение preview
+//   return (
+//     prevProps.document.id === nextProps.document.id &&
+//     prevProps.document.preview_url === nextProps.document.preview_url &&
+//     prevProps.document.download_url === nextProps.document.download_url &&
+//     prevProps.document.mime_type === nextProps.document.mime_type &&
+//     prevProps.document.name === nextProps.document.name
+//   );
+// });

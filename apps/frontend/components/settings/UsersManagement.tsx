@@ -160,7 +160,7 @@ export const UsersManagement: React.FC = () => {
               Отмена
             </Button>
             <Button
-              color="primary"
+              color="default"
               onPress={handleInviteUser}
               isLoading={isInviting}
               isDisabled={!inviteEmail.trim()}

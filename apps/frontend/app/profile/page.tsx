@@ -37,7 +37,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background" style={{
+        backgroundImage: 'url("/bglk.png")',
+        backgroundSize: "100% 100%",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+    }}>
       <Sidebar currentView="profile" />
 
       <div className="flex-1 overflow-y-auto p-6">
@@ -100,7 +105,7 @@ export default function ProfilePage() {
                 </Button>
               <Button
                 color="danger"
-                variant="flat"
+                variant="light"
                 onPress={handleLogout}
                 className="w-full mt-2"
               >

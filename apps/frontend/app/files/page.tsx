@@ -222,6 +222,12 @@ export default function FilesPage() {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            style={{
+                backgroundImage: 'url("/bglk.png")',
+                backgroundSize: "100% 100%",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+            }}
         >
             {/* Hidden file input */}
             <input
@@ -253,7 +259,7 @@ export default function FilesPage() {
 
             {/* Folder Tree with Documents */}
             <div
-                className="border-r border-divider overflow-hidden relative"
+                className="border-r-3 border-divider overflow-hidden relative"
                 style={{width: `${treeWidth}px`}}
             >
                 <FolderTree
@@ -263,6 +269,7 @@ export default function FilesPage() {
                     onDocumentSelect={handleDocumentSelect}
                     selectedFolderId={selectedFolderId}
                     selectedDocumentId={selectedDocument?.id}
+                    handleUploadClick={handleUploadClick}
                     isLoading={isLoading}
                     showRoot
                     onFolderCreated={loadFolderTree}
@@ -287,8 +294,8 @@ export default function FilesPage() {
             </div>
 
             {/* File Preview - Center */}
-            <div className="flex-1 border-r border-divider overflow-hidden">
-                <FilePreview document={selectedDocument}/>
+            <div className="flex-1 border-r-3 border-divider overflow-hidden">
+                <FilePreviewComponent document={selectedDocument}/>
             </div>
 
             {/* File Info */}

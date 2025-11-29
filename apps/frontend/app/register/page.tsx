@@ -80,7 +80,7 @@ export default function RegisterPage() {
                         )}
                         <Button
                             type="submit"
-                            color="primary"
+                            color="default"
                             isLoading={isLoading}
                             className="w-full"
                             onPress={handleSubmit}

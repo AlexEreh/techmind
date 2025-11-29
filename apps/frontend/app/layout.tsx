@@ -9,8 +9,8 @@ import { fontSans } from "@/config/fonts";
 
 export const metadata: Metadata = {
   title: {
-    default: "DataRush - Менеджер файлов",
-    template: `%s - DataRush`,
+    default: "TechMind - Менеджер файлов",
+    template: `%s - TechMind`,
   },
   description: "Менеджер файлов для организаций",
   icons: {
@@ -37,11 +37,11 @@ export default function RootLayout({
           className={clsx(
               "min-h-screen text-foreground font-sans antialiased",
               fontSans.variable,
-              "dark" // Ensure dark theme is applied
+              "dark .my-background" // Ensure dark theme is applied
           )}
           style={{
               backgroundImage: 'url("/bg.png")',
-              backgroundSize: "100% 100%", // Ensure the background image stretches to cover the entire screen
+              backgroundSize: "100% 100%",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
           }}

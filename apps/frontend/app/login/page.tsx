@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md" style={{background: "#242428"}}>
         <CardHeader className="flex flex-col gap-1 items-center pt-6">
           <h1 className="text-2xl font-bold">Вход в систему</h1>
           <p className="text-small text-default-500">Менеджер файлов организации</p>
@@ -63,7 +63,7 @@ export default function LoginPage() {
             )}
             <Button
               type="submit"
-              color="primary"
+              color="default"
               isLoading={isLoading}
               className="w-full"
             >
@@ -72,7 +72,7 @@ export default function LoginPage() {
           </form>
           <div className="text-center text-small">
             Нет аккаунта?{' '}
-            <Link href="/register" size="sm">
+            <Link href="/register" size="sm" style={{color: "#A2A2A2"}}>
               Зарегистрироваться
             </Link>
           </div>

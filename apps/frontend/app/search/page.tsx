@@ -93,10 +93,15 @@ export default function SearchPage() {
     }
 
     return (
-        <div className="flex h-screen bg-background">
+        <div className="flex h-screen bg-background" style={{
+            backgroundImage: 'url("/bglk.png")',
+            backgroundSize: "100% 100%",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+        }}>
             <Sidebar currentView="search" />
 
-            <div className="w-80 border-r border-divider overflow-y-auto">
+            <div className="w-80 border-r-3 border-divider overflow-y-auto">
                 <SearchPanel
                     onSearch={handleSearch}
                     results={searchResults}
@@ -106,7 +111,7 @@ export default function SearchPage() {
                 />
             </div>
 
-            <div className="flex-1 border-r border-divider overflow-y-auto">
+            <div className="flex-1 border-r-3 border-divider overflow-y-auto">
                 <FilePreview document={selectedDocument} />
             </div>
 
