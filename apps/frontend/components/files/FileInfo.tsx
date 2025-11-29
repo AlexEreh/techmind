@@ -132,7 +132,7 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
               key={tag.id}
               onClose={() => handleRemoveTag(tag.id)}
               variant="flat"
-              color="primary"
+              color="default"
             >
               {tag.name}
             </Chip>
@@ -162,14 +162,14 @@ export const FileInfo: React.FC<FileInfoProps> = ({ document, onUpdate, onDelete
               as="a"
               href={document.download_url}
               download
-              color="primary"
+              color="default"
               className="w-full"
             >
               Скачать файл
             </Button>
             <Button
               color="danger"
-              variant="flat"
+              variant="light"
               className="w-full"
               startContent={<TrashIcon />}
               onPress={handleDeleteDocument}

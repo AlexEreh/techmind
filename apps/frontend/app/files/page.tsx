@@ -1,16 +1,24 @@
 'use client';
 
-import {useState, useEffect, useRef} from 'react';
+import {useState, useEffect, useRef, memo} from 'react';
 import {useAuth} from '@/contexts/AuthContext';
 import {useRouter} from 'next/navigation';
 import {Sidebar} from '@/components/files/Sidebar';
 import {FolderTree} from '@/components/files/FolderTree';
-import {FilePreview} from '@/components/files/FilePreview';
+import FilePreviewComponent from '@/components/files/FilePreview';
 import {FileInfo} from '@/components/files/FileInfo';
 import {foldersApi} from '@/lib/api/folders';
 import {documentsApi} from '@/lib/api/documents';
 import {Document, Folder} from '@/lib/api/types';
 import {Spinner} from '@heroui/spinner';
+
+const MemoizedFilePreview = memo(
+    FilePreviewComponent,
+    (prevProps, nextProps) => {
+        // Компонент не перерисовывается, если ID документа не изменился
+        return prevProps.document?.id === nextProps.document?.id;
+    }
+);
 
 export default function FilesPage() {
     const {user, currentCompany, isLoading: authLoading} = useAuth();
@@ -23,6 +31,7 @@ export default function FilesPage() {
     const [treeWidth, setTreeWidth] = useState(300);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -222,6 +231,12 @@ export default function FilesPage() {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            style={{
+                backgroundImage: 'url("/bglk.png")',
+                backgroundSize: "100% 100%",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+            }}
         >
             {/* Hidden file input */}
             <input
@@ -253,7 +268,7 @@ export default function FilesPage() {
 
             {/* Folder Tree with Documents */}
             <div
-                className="border-r border-divider overflow-hidden relative"
+                className="border-r-3 border-divider overflow-hidden relative"
                 style={{width: `${treeWidth}px`}}
             >
                 <FolderTree
@@ -263,6 +278,7 @@ export default function FilesPage() {
                     onDocumentSelect={handleDocumentSelect}
                     selectedFolderId={selectedFolderId}
                     selectedDocumentId={selectedDocument?.id}
+                    handleUploadClick={handleUploadClick}
                     isLoading={isLoading}
                     showRoot
                     onFolderCreated={loadFolderTree}
@@ -287,8 +303,8 @@ export default function FilesPage() {
             </div>
 
             {/* File Preview - Center */}
-            <div className="flex-1 border-r border-divider overflow-hidden">
-                <FilePreview document={selectedDocument}/>
+            <div className="flex-1 border-r-3 border-divider overflow-hidden">
+                <MemoizedFilePreview document={selectedDocument}/>
             </div>
 
             {/* File Info */}

@@ -88,7 +88,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               key={tag.id}
               onClick={() => toggleTag(tag.id)}
               variant={selectedTags.includes(tag.id) ? 'solid' : 'bordered'}
-              color={selectedTags.includes(tag.id) ? 'primary' : 'default'}
+              color={selectedTags.includes(tag.id) ? 'default' : 'default'}
               className="cursor-pointer"
             >
               {tag.name}
@@ -114,7 +114,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
       </div>
 
       <Button
-        color="primary"
+        color="default"
         onPress={handleSearch}
         isLoading={isLoading}
         className="w-full"

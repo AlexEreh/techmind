@@ -25,11 +25,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
 
   return (
     <div className="w-16 bg-content1 border-r border-divider flex flex-col items-center py-4 gap-4">
-      <Tooltip content="Файлы" placement="right">
+      <Tooltip content="Файлы" placement="right" color={"default"}>
         <Button
           isIconOnly
           variant={currentView === 'files' ? 'solid' : 'light'}
-          color={currentView === 'files' ? 'primary' : 'default'}
+          color={currentView === 'files' ? 'default' : 'default'}
           onPress={() => router.push('/files')}
         >
           <FileIcon className="w-5 h-5" />
@@ -40,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
         <Button
           isIconOnly
           variant={currentView === 'search' ? 'solid' : 'light'}
-          color={currentView === 'search' ? 'primary' : 'default'}
+          color={currentView === 'search' ? 'default' : 'default'}
           onPress={() => router.push('/search')}
         >
           <SearchIcon className="w-5 h-5" />
@@ -51,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
         <Button
           isIconOnly
           variant={currentView === 'tags' ? 'solid' : 'light'}
-          color={currentView === 'tags' ? 'primary' : 'default'}
+          color={currentView === 'tags' ? 'default' : 'default'}
           onPress={() => router.push('/tags')}
         >
           <TagIcon className="w-5 h-5" />
@@ -62,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
         <Button
           isIconOnly
           variant={currentView === 'users' ? 'solid' : 'light'}
-          color={currentView === 'users' ? 'primary' : 'default'}
+          color={currentView === 'users' ? 'default' : 'default'}
           onPress={() => router.push('/users')}
         >
           <UsersIcon className="w-5 h-5" />
@@ -90,25 +90,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
         <Button
           isIconOnly
           variant={currentView === 'profile' ? 'solid' : 'light'}
-          color={currentView === 'profile' ? 'primary' : 'default'}
+          color={currentView === 'profile' ? 'default' : 'default'}
           onPress={() => router.push('/profile')}
         >
           <UserIcon className="w-5 h-5" />
         </Button>
       </Tooltip>
 
-      {currentView === 'files' && onUploadClick && (
-        <Tooltip content="Загрузить документ" placement="right">
-          <Button
-            isIconOnly
-            color="success"
-            variant="flat"
-            onPress={onUploadClick}
-          >
-            <UploadIcon className="w-5 h-5" />
-          </Button>
-        </Tooltip>
-      )}
+      {/*{currentView === 'files' && onUploadClick && (*/}
+      {/*  <Tooltip content="Загрузить документ" placement="right">*/}
+      {/*    <Button*/}
+      {/*      isIconOnly*/}
+      {/*      color="success"*/}
+      {/*      variant="flat"*/}
+      {/*      onPress={onUploadClick}*/}
+      {/*    >*/}
+      {/*      <UploadIcon className="w-5 h-5" />*/}
+      {/*    </Button>*/}
+      {/*  </Tooltip>*/}
+      {/*)}*/}
     </div>
   );
 };

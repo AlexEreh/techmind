@@ -84,7 +84,7 @@ export const UsersManagement: React.FC = () => {
     <div className="py-4 space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Управление пользователями</h3>
-        <Button color="primary" startContent={<PlusIcon />} onPress={onOpen}>
+        <Button color="default" startContent={<PlusIcon />} onPress={onOpen}>
           Пригласить пользователя
         </Button>
       </div>
@@ -160,7 +160,7 @@ export const UsersManagement: React.FC = () => {
               Отмена
             </Button>
             <Button
-              color="primary"
+              color="default"
               onPress={handleInviteUser}
               isLoading={isInviting}
               isDisabled={!inviteEmail.trim()}

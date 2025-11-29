@@ -7,9 +7,10 @@ import { Spinner } from '@heroui/spinner';
 import { Divider } from '@heroui/divider';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/modal';
 import { Folder, Document } from '@/lib/api/types';
-import { ChevronDownIcon, ChevronRightIcon, FolderIcon, PlusIcon, FileIcon } from '@/components/icons';
+import {ChevronDownIcon, ChevronRightIcon, FolderIcon, PlusIcon, FileIcon, UploadIcon} from '@/components/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { foldersApi } from '@/lib/api/folders';
+import {Spacer} from "@heroui/spacer";
 
 interface FolderTreeProps {
   folders: Folder[];
@@ -22,6 +23,7 @@ interface FolderTreeProps {
   highlightedIds?: string[];
   showRoot?: boolean;
   onFolderCreated?: () => void;
+    handleUploadClick?: () => void;
 }
 
 export const FolderTree: React.FC<FolderTreeProps> = ({
@@ -35,6 +37,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   highlightedIds = [],
   showRoot = false,
   onFolderCreated,
+  handleUploadClick
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [newFolderName, setNewFolderName] = useState('');
@@ -116,7 +119,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         {/* Folder tree */}
         <div className="mb-2">
           {showRoot && (
-            <div className={`flex items-center py-1 px-2 hover:bg-default-100 cursor-pointer ${selectedFolderId === null ? 'bg-primary/20' : ''}`}>
+            <div className={`flex items-center py-1 px-2 hover:bg-default-100 cursor-pointer`} style={{backgroundColor: "#303030"}}>
               <button
                 className="flex items-center w-full text-left"
                 onClick={() => onFolderSelect(null)}
@@ -136,7 +139,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           )}
         </div>
 
-        <Divider className="my-2" />
+        {/*<Divider className="my-2" />*/}
 
         {/* Documents list */}
         <div className="px-2">
@@ -145,11 +148,12 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           </p>
           {documents.length > 0 ? (
             <div className="space-y-1">
+              {/*{[...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents, ...documents].map((doc) => (*/}
               {documents.map((doc) => (
                 <div
                   key={doc.id}
                   className={`flex items-center py-2 px-2 rounded cursor-pointer hover:bg-default-100 ${
-                    selectedDocumentId === doc.id ? 'bg-primary/20' : ''
+                    selectedDocumentId === doc.id ? '#1E1E1E' : ''
                   }`}
                   onClick={() => onDocumentSelect?.(doc)}
                 >
@@ -166,17 +170,33 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         </div>
       </div>
 
-      <div className="p-2 border-t border-divider">
+      <div className="p-2">
+
+
+
         <Button
           fullWidth
-          color="primary"
+          style={{backgroundColor: "#3b3b42"}}
           variant="flat"
           startContent={<PlusIcon />}
           onPress={onOpen}
           size="sm"
+          className={"text-sm"}
         >
           Создать папку
         </Button>
+          <Spacer className={"my-0.5"} />
+          <Button
+              style={{backgroundColor: "#3b3b42"}}
+              onPress={handleUploadClick}
+              variant="flat"
+              startContent={<UploadIcon className="w-3 h-3" />}
+              size={"sm"}
+              fullWidth
+              className={"text-sm"}
+          >
+              Загрузить файл
+          </Button>
       </div>
 
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -207,7 +227,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
               Отмена
             </Button>
             <Button
-              color="primary"
+              color="default"
               onPress={handleCreateFolder}
               isLoading={isCreating}
               isDisabled={!newFolderName.trim()}
