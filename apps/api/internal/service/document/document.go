@@ -874,6 +874,58 @@ func (s *documentService) ExtractAndIndexText(ctx context.Context, documentID uu
 	}
 
 	fmt.Printf("Successfully indexed document %s in Elasticsearch index 'documents'\n", document.ID)
+
+	// Автоматическое добавление тегов на основе содержимого документа
+	if err := s.autoAssignTags(ctx, document, extractedText); err != nil {
+		// Логируем ошибку, но не прерываем процесс индексации
+		fmt.Printf("Failed to auto-assign tags for document %s: %v\n", document.ID, err)
+	}
+
+	return nil
+}
+
+// autoAssignTags автоматически присваивает теги документу на основе содержимого текста
+// Получает все теги компании и проверяет их наличие в тексте документа (case-insensitive)
+// Если название тега найдено в тексте, тег автоматически добавляется к документу
+func (s *documentService) autoAssignTags(ctx context.Context, document *ent.Document, text string) error {
+	// Получаем все теги компании
+	tags, err := s.tagRepo.ListByCompany(ctx, document.CompanyID)
+	if err != nil {
+		return fmt.Errorf("failed to get company tags: %w", err)
+	}
+
+	if len(tags) == 0 {
+		return nil // Нет тегов для присвоения
+	}
+
+	// Приводим текст к нижнему регистру для поиска без учета регистра
+	lowerText := strings.ToLower(text)
+
+	// Проверяем каждый тег
+	assignedCount := 0
+	for _, tag := range tags {
+		// Приводим название тега к нижнему регистру
+		lowerTagName := strings.ToLower(tag.Name)
+
+		// Проверяем наличие тега в тексте
+		if strings.Contains(lowerText, lowerTagName) {
+			// Пытаемся добавить тег к документу
+			_, err := s.documentTagRepo.Create(ctx, document.ID, tag.ID)
+			if err != nil {
+				// Если тег уже добавлен или произошла другая ошибка, продолжаем
+				// В продакшене здесь должно быть логирование
+				fmt.Printf("Failed to assign tag '%s' to document %s: %v\n", tag.Name, document.ID, err)
+				continue
+			}
+			assignedCount++
+			fmt.Printf("Auto-assigned tag '%s' to document %s\n", tag.Name, document.ID)
+		}
+	}
+
+	if assignedCount > 0 {
+		fmt.Printf("Successfully auto-assigned %d tag(s) to document %s\n", assignedCount, document.ID)
+	}
+
 	return nil
 }
 
