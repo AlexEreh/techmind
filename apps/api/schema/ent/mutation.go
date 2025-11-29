@@ -62,6 +62,9 @@ type CompanyMutation struct {
 	tags                 map[uuid.UUID]struct{}
 	removedtags          map[uuid.UUID]struct{}
 	clearedtags          bool
+	senders              map[uuid.UUID]struct{}
+	removedsenders       map[uuid.UUID]struct{}
+	clearedsenders       bool
 	done                 bool
 	oldValue             func(context.Context) (*Company, error)
 	predicates           []predicate.Company
@@ -423,6 +426,60 @@ func (m *CompanyMutation) ResetTags() {
 	m.removedtags = nil
 }
 
+// AddSenderIDs adds the "senders" edge to the Sender entity by ids.
+func (m *CompanyMutation) AddSenderIDs(ids ...uuid.UUID) {
+	if m.senders == nil {
+		m.senders = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.senders[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSenders clears the "senders" edge to the Sender entity.
+func (m *CompanyMutation) ClearSenders() {
+	m.clearedsenders = true
+}
+
+// SendersCleared reports if the "senders" edge to the Sender entity was cleared.
+func (m *CompanyMutation) SendersCleared() bool {
+	return m.clearedsenders
+}
+
+// RemoveSenderIDs removes the "senders" edge to the Sender entity by IDs.
+func (m *CompanyMutation) RemoveSenderIDs(ids ...uuid.UUID) {
+	if m.removedsenders == nil {
+		m.removedsenders = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.senders, ids[i])
+		m.removedsenders[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSenders returns the removed IDs of the "senders" edge to the Sender entity.
+func (m *CompanyMutation) RemovedSendersIDs() (ids []uuid.UUID) {
+	for id := range m.removedsenders {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SendersIDs returns the "senders" edge IDs in the mutation.
+func (m *CompanyMutation) SendersIDs() (ids []uuid.UUID) {
+	for id := range m.senders {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSenders resets all changes to the "senders" edge.
+func (m *CompanyMutation) ResetSenders() {
+	m.senders = nil
+	m.clearedsenders = false
+	m.removedsenders = nil
+}
+
 // Where appends a list predicates to the CompanyMutation builder.
 func (m *CompanyMutation) Where(ps ...predicate.Company) {
 	m.predicates = append(m.predicates, ps...)
@@ -556,7 +613,7 @@ func (m *CompanyMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CompanyMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.company_users != nil {
 		edges = append(edges, company.EdgeCompanyUsers)
 	}
@@ -568,6 +625,9 @@ func (m *CompanyMutation) AddedEdges() []string {
 	}
 	if m.tags != nil {
 		edges = append(edges, company.EdgeTags)
+	}
+	if m.senders != nil {
+		edges = append(edges, company.EdgeSenders)
 	}
 	return edges
 }
@@ -600,13 +660,19 @@ func (m *CompanyMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case company.EdgeSenders:
+		ids := make([]ent.Value, 0, len(m.senders))
+		for id := range m.senders {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CompanyMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedcompany_users != nil {
 		edges = append(edges, company.EdgeCompanyUsers)
 	}
@@ -618,6 +684,9 @@ func (m *CompanyMutation) RemovedEdges() []string {
 	}
 	if m.removedtags != nil {
 		edges = append(edges, company.EdgeTags)
+	}
+	if m.removedsenders != nil {
+		edges = append(edges, company.EdgeSenders)
 	}
 	return edges
 }
@@ -650,13 +719,19 @@ func (m *CompanyMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case company.EdgeSenders:
+		ids := make([]ent.Value, 0, len(m.removedsenders))
+		for id := range m.removedsenders {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CompanyMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedcompany_users {
 		edges = append(edges, company.EdgeCompanyUsers)
 	}
@@ -668,6 +743,9 @@ func (m *CompanyMutation) ClearedEdges() []string {
 	}
 	if m.clearedtags {
 		edges = append(edges, company.EdgeTags)
+	}
+	if m.clearedsenders {
+		edges = append(edges, company.EdgeSenders)
 	}
 	return edges
 }
@@ -684,6 +762,8 @@ func (m *CompanyMutation) EdgeCleared(name string) bool {
 		return m.cleareddocuments
 	case company.EdgeTags:
 		return m.clearedtags
+	case company.EdgeSenders:
+		return m.clearedsenders
 	}
 	return false
 }
@@ -712,6 +792,9 @@ func (m *CompanyMutation) ResetEdge(name string) error {
 	case company.EdgeTags:
 		m.ResetTags()
 		return nil
+	case company.EdgeSenders:
+		m.ResetSenders()
+		return nil
 	}
 	return fmt.Errorf("unknown Company edge %s", name)
 }
@@ -724,6 +807,7 @@ type CompanyUserMutation struct {
 	id             *uuid.UUID
 	role           *int
 	addrole        *int
+	added_at       *time.Time
 	clearedFields  map[string]struct{}
 	user           *uuid.UUID
 	cleareduser    bool
@@ -966,6 +1050,42 @@ func (m *CompanyUserMutation) ResetRole() {
 	m.addrole = nil
 }
 
+// SetAddedAt sets the "added_at" field.
+func (m *CompanyUserMutation) SetAddedAt(t time.Time) {
+	m.added_at = &t
+}
+
+// AddedAt returns the value of the "added_at" field in the mutation.
+func (m *CompanyUserMutation) AddedAt() (r time.Time, exists bool) {
+	v := m.added_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddedAt returns the old "added_at" field's value of the CompanyUser entity.
+// If the CompanyUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CompanyUserMutation) OldAddedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddedAt: %w", err)
+	}
+	return oldValue.AddedAt, nil
+}
+
+// ResetAddedAt resets all changes to the "added_at" field.
+func (m *CompanyUserMutation) ResetAddedAt() {
+	m.added_at = nil
+}
+
 // ClearUser clears the "user" edge to the User entity.
 func (m *CompanyUserMutation) ClearUser() {
 	m.cleareduser = true
@@ -1054,7 +1174,7 @@ func (m *CompanyUserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CompanyUserMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.user != nil {
 		fields = append(fields, companyuser.FieldUserID)
 	}
@@ -1063,6 +1183,9 @@ func (m *CompanyUserMutation) Fields() []string {
 	}
 	if m.role != nil {
 		fields = append(fields, companyuser.FieldRole)
+	}
+	if m.added_at != nil {
+		fields = append(fields, companyuser.FieldAddedAt)
 	}
 	return fields
 }
@@ -1078,6 +1201,8 @@ func (m *CompanyUserMutation) Field(name string) (ent.Value, bool) {
 		return m.CompanyID()
 	case companyuser.FieldRole:
 		return m.Role()
+	case companyuser.FieldAddedAt:
+		return m.AddedAt()
 	}
 	return nil, false
 }
@@ -1093,6 +1218,8 @@ func (m *CompanyUserMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldCompanyID(ctx)
 	case companyuser.FieldRole:
 		return m.OldRole(ctx)
+	case companyuser.FieldAddedAt:
+		return m.OldAddedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown CompanyUser field %s", name)
 }
@@ -1122,6 +1249,13 @@ func (m *CompanyUserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRole(v)
+		return nil
+	case companyuser.FieldAddedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown CompanyUser field %s", name)
@@ -1195,6 +1329,9 @@ func (m *CompanyUserMutation) ResetField(name string) error {
 		return nil
 	case companyuser.FieldRole:
 		m.ResetRole()
+		return nil
+	case companyuser.FieldAddedAt:
+		m.ResetAddedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown CompanyUser field %s", name)
@@ -3928,6 +4065,8 @@ type SenderMutation struct {
 	name             *string
 	email            *string
 	clearedFields    map[string]struct{}
+	company          *uuid.UUID
+	clearedcompany   bool
 	documents        map[uuid.UUID]struct{}
 	removeddocuments map[uuid.UUID]struct{}
 	cleareddocuments bool
@@ -4040,6 +4179,42 @@ func (m *SenderMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	}
 }
 
+// SetCompanyID sets the "company_id" field.
+func (m *SenderMutation) SetCompanyID(u uuid.UUID) {
+	m.company = &u
+}
+
+// CompanyID returns the value of the "company_id" field in the mutation.
+func (m *SenderMutation) CompanyID() (r uuid.UUID, exists bool) {
+	v := m.company
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompanyID returns the old "company_id" field's value of the Sender entity.
+// If the Sender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SenderMutation) OldCompanyID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompanyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompanyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompanyID: %w", err)
+	}
+	return oldValue.CompanyID, nil
+}
+
+// ResetCompanyID resets all changes to the "company_id" field.
+func (m *SenderMutation) ResetCompanyID() {
+	m.company = nil
+}
+
 // SetName sets the "name" field.
 func (m *SenderMutation) SetName(s string) {
 	m.name = &s
@@ -4123,6 +4298,33 @@ func (m *SenderMutation) EmailCleared() bool {
 func (m *SenderMutation) ResetEmail() {
 	m.email = nil
 	delete(m.clearedFields, sender.FieldEmail)
+}
+
+// ClearCompany clears the "company" edge to the Company entity.
+func (m *SenderMutation) ClearCompany() {
+	m.clearedcompany = true
+	m.clearedFields[sender.FieldCompanyID] = struct{}{}
+}
+
+// CompanyCleared reports if the "company" edge to the Company entity was cleared.
+func (m *SenderMutation) CompanyCleared() bool {
+	return m.clearedcompany
+}
+
+// CompanyIDs returns the "company" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CompanyID instead. It exists only for internal usage by the builders.
+func (m *SenderMutation) CompanyIDs() (ids []uuid.UUID) {
+	if id := m.company; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCompany resets all changes to the "company" edge.
+func (m *SenderMutation) ResetCompany() {
+	m.company = nil
+	m.clearedcompany = false
 }
 
 // AddDocumentIDs adds the "documents" edge to the Document entity by ids.
@@ -4213,7 +4415,10 @@ func (m *SenderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SenderMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
+	if m.company != nil {
+		fields = append(fields, sender.FieldCompanyID)
+	}
 	if m.name != nil {
 		fields = append(fields, sender.FieldName)
 	}
@@ -4228,6 +4433,8 @@ func (m *SenderMutation) Fields() []string {
 // schema.
 func (m *SenderMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case sender.FieldCompanyID:
+		return m.CompanyID()
 	case sender.FieldName:
 		return m.Name()
 	case sender.FieldEmail:
@@ -4241,6 +4448,8 @@ func (m *SenderMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *SenderMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case sender.FieldCompanyID:
+		return m.OldCompanyID(ctx)
 	case sender.FieldName:
 		return m.OldName(ctx)
 	case sender.FieldEmail:
@@ -4254,6 +4463,13 @@ func (m *SenderMutation) OldField(ctx context.Context, name string) (ent.Value, 
 // type.
 func (m *SenderMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case sender.FieldCompanyID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompanyID(v)
+		return nil
 	case sender.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -4326,6 +4542,9 @@ func (m *SenderMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *SenderMutation) ResetField(name string) error {
 	switch name {
+	case sender.FieldCompanyID:
+		m.ResetCompanyID()
+		return nil
 	case sender.FieldName:
 		m.ResetName()
 		return nil
@@ -4338,7 +4557,10 @@ func (m *SenderMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SenderMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.company != nil {
+		edges = append(edges, sender.EdgeCompany)
+	}
 	if m.documents != nil {
 		edges = append(edges, sender.EdgeDocuments)
 	}
@@ -4349,6 +4571,10 @@ func (m *SenderMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *SenderMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case sender.EdgeCompany:
+		if id := m.company; id != nil {
+			return []ent.Value{*id}
+		}
 	case sender.EdgeDocuments:
 		ids := make([]ent.Value, 0, len(m.documents))
 		for id := range m.documents {
@@ -4361,7 +4587,7 @@ func (m *SenderMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SenderMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removeddocuments != nil {
 		edges = append(edges, sender.EdgeDocuments)
 	}
@@ -4384,7 +4610,10 @@ func (m *SenderMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SenderMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clearedcompany {
+		edges = append(edges, sender.EdgeCompany)
+	}
 	if m.cleareddocuments {
 		edges = append(edges, sender.EdgeDocuments)
 	}
@@ -4395,6 +4624,8 @@ func (m *SenderMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *SenderMutation) EdgeCleared(name string) bool {
 	switch name {
+	case sender.EdgeCompany:
+		return m.clearedcompany
 	case sender.EdgeDocuments:
 		return m.cleareddocuments
 	}
@@ -4405,6 +4636,9 @@ func (m *SenderMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *SenderMutation) ClearEdge(name string) error {
 	switch name {
+	case sender.EdgeCompany:
+		m.ClearCompany()
+		return nil
 	}
 	return fmt.Errorf("unknown Sender unique edge %s", name)
 }
@@ -4413,6 +4647,9 @@ func (m *SenderMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *SenderMutation) ResetEdge(name string) error {
 	switch name {
+	case sender.EdgeCompany:
+		m.ResetCompany()
+		return nil
 	case sender.EdgeDocuments:
 		m.ResetDocuments()
 		return nil

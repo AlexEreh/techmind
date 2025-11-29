@@ -11,6 +11,7 @@ import (
 	"techmind/schema/ent/document"
 	"techmind/schema/ent/folder"
 	"techmind/schema/ent/predicate"
+	"techmind/schema/ent/sender"
 	"techmind/schema/ent/tag"
 
 	"entgo.io/ent/dialect/sql"
@@ -107,6 +108,21 @@ func (_u *CompanyUpdate) AddTags(v ...*Tag) *CompanyUpdate {
 	return _u.AddTagIDs(ids...)
 }
 
+// AddSenderIDs adds the "senders" edge to the Sender entity by IDs.
+func (_u *CompanyUpdate) AddSenderIDs(ids ...uuid.UUID) *CompanyUpdate {
+	_u.mutation.AddSenderIDs(ids...)
+	return _u
+}
+
+// AddSenders adds the "senders" edges to the Sender entity.
+func (_u *CompanyUpdate) AddSenders(v ...*Sender) *CompanyUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSenderIDs(ids...)
+}
+
 // Mutation returns the CompanyMutation object of the builder.
 func (_u *CompanyUpdate) Mutation() *CompanyMutation {
 	return _u.mutation
@@ -194,6 +210,27 @@ func (_u *CompanyUpdate) RemoveTags(v ...*Tag) *CompanyUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTagIDs(ids...)
+}
+
+// ClearSenders clears all "senders" edges to the Sender entity.
+func (_u *CompanyUpdate) ClearSenders() *CompanyUpdate {
+	_u.mutation.ClearSenders()
+	return _u
+}
+
+// RemoveSenderIDs removes the "senders" edge to Sender entities by IDs.
+func (_u *CompanyUpdate) RemoveSenderIDs(ids ...uuid.UUID) *CompanyUpdate {
+	_u.mutation.RemoveSenderIDs(ids...)
+	return _u
+}
+
+// RemoveSenders removes "senders" edges to Sender entities.
+func (_u *CompanyUpdate) RemoveSenders(v ...*Sender) *CompanyUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSenderIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -434,6 +471,51 @@ func (_u *CompanyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.SendersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   company.SendersTable,
+			Columns: []string{company.SendersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSendersIDs(); len(nodes) > 0 && !_u.mutation.SendersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   company.SendersTable,
+			Columns: []string{company.SendersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SendersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   company.SendersTable,
+			Columns: []string{company.SendersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -530,6 +612,21 @@ func (_u *CompanyUpdateOne) AddTags(v ...*Tag) *CompanyUpdateOne {
 	return _u.AddTagIDs(ids...)
 }
 
+// AddSenderIDs adds the "senders" edge to the Sender entity by IDs.
+func (_u *CompanyUpdateOne) AddSenderIDs(ids ...uuid.UUID) *CompanyUpdateOne {
+	_u.mutation.AddSenderIDs(ids...)
+	return _u
+}
+
+// AddSenders adds the "senders" edges to the Sender entity.
+func (_u *CompanyUpdateOne) AddSenders(v ...*Sender) *CompanyUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSenderIDs(ids...)
+}
+
 // Mutation returns the CompanyMutation object of the builder.
 func (_u *CompanyUpdateOne) Mutation() *CompanyMutation {
 	return _u.mutation
@@ -617,6 +714,27 @@ func (_u *CompanyUpdateOne) RemoveTags(v ...*Tag) *CompanyUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTagIDs(ids...)
+}
+
+// ClearSenders clears all "senders" edges to the Sender entity.
+func (_u *CompanyUpdateOne) ClearSenders() *CompanyUpdateOne {
+	_u.mutation.ClearSenders()
+	return _u
+}
+
+// RemoveSenderIDs removes the "senders" edge to Sender entities by IDs.
+func (_u *CompanyUpdateOne) RemoveSenderIDs(ids ...uuid.UUID) *CompanyUpdateOne {
+	_u.mutation.RemoveSenderIDs(ids...)
+	return _u
+}
+
+// RemoveSenders removes "senders" edges to Sender entities.
+func (_u *CompanyUpdateOne) RemoveSenders(v ...*Sender) *CompanyUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSenderIDs(ids...)
 }
 
 // Where appends a list predicates to the CompanyUpdate builder.
@@ -880,6 +998,51 @@ func (_u *CompanyUpdateOne) sqlSave(ctx context.Context) (_node *Company, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SendersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   company.SendersTable,
+			Columns: []string{company.SendersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSendersIDs(); len(nodes) > 0 && !_u.mutation.SendersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   company.SendersTable,
+			Columns: []string{company.SendersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SendersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   company.SendersTable,
+			Columns: []string{company.SendersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sender.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

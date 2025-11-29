@@ -35,9 +35,11 @@ type CompanyEdges struct {
 	Documents []*Document `json:"documents,omitempty"`
 	// Tags holds the value of the tags edge.
 	Tags []*Tag `json:"tags,omitempty"`
+	// Senders holds the value of the senders edge.
+	Senders []*Sender `json:"senders,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // CompanyUsersOrErr returns the CompanyUsers value or an error if the edge
@@ -74,6 +76,15 @@ func (e CompanyEdges) TagsOrErr() ([]*Tag, error) {
 		return e.Tags, nil
 	}
 	return nil, &NotLoadedError{edge: "tags"}
+}
+
+// SendersOrErr returns the Senders value or an error if the edge
+// was not loaded in eager-loading.
+func (e CompanyEdges) SendersOrErr() ([]*Sender, error) {
+	if e.loadedTypes[4] {
+		return e.Senders, nil
+	}
+	return nil, &NotLoadedError{edge: "senders"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -143,6 +154,11 @@ func (_m *Company) QueryDocuments() *DocumentQuery {
 // QueryTags queries the "tags" edge of the Company entity.
 func (_m *Company) QueryTags() *TagQuery {
 	return NewCompanyClient(_m.config).QueryTags(_m)
+}
+
+// QuerySenders queries the "senders" edge of the Company entity.
+func (_m *Company) QuerySenders() *SenderQuery {
+	return NewCompanyClient(_m.config).QuerySenders(_m)
 }
 
 // Update returns a builder for updating this Company.

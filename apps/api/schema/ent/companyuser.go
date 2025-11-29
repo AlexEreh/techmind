@@ -8,6 +8,7 @@ import (
 	"techmind/schema/ent/company"
 	"techmind/schema/ent/companyuser"
 	"techmind/schema/ent/user"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -25,6 +26,8 @@ type CompanyUser struct {
 	CompanyID uuid.UUID `json:"company_id,omitempty"`
 	// Role holds the value of the "role" field.
 	Role int `json:"role,omitempty"`
+	// AddedAt holds the value of the "added_at" field.
+	AddedAt time.Time `json:"added_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CompanyUserQuery when eager-loading is set.
 	Edges        CompanyUserEdges `json:"edges"`
@@ -71,6 +74,8 @@ func (*CompanyUser) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case companyuser.FieldRole:
 			values[i] = new(sql.NullInt64)
+		case companyuser.FieldAddedAt:
+			values[i] = new(sql.NullTime)
 		case companyuser.FieldID, companyuser.FieldUserID, companyuser.FieldCompanyID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -111,6 +116,12 @@ func (_m *CompanyUser) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field role", values[i])
 			} else if value.Valid {
 				_m.Role = int(value.Int64)
+			}
+		case companyuser.FieldAddedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field added_at", values[i])
+			} else if value.Valid {
+				_m.AddedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -166,6 +177,9 @@ func (_m *CompanyUser) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("role=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Role))
+	builder.WriteString(", ")
+	builder.WriteString("added_at=")
+	builder.WriteString(_m.AddedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

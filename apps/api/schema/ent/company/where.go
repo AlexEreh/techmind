@@ -217,6 +217,29 @@ func HasTagsWith(preds ...predicate.Tag) predicate.Company {
 	})
 }
 
+// HasSenders applies the HasEdge predicate on the "senders" edge.
+func HasSenders() predicate.Company {
+	return predicate.Company(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SendersTable, SendersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSendersWith applies the HasEdge predicate on the "senders" edge with a given conditions (other predicates).
+func HasSendersWith(preds ...predicate.Sender) predicate.Company {
+	return predicate.Company(func(s *sql.Selector) {
+		step := newSendersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Company) predicate.Company {
 	return predicate.Company(sql.AndPredicates(predicates...))

@@ -2,6 +2,7 @@ package company_user
 
 import (
 	"context"
+
 	"techmind/internal/repo"
 	"techmind/schema/ent"
 	"techmind/schema/ent/companyuser"
@@ -100,5 +101,13 @@ func (r *companyUserRepo) ListByUserWithCompany(ctx context.Context, userID uuid
 		Query().
 		Where(companyuser.UserID(userID)).
 		WithCompany().
+		All(ctx)
+}
+
+func (r *companyUserRepo) ListByCompanyWithUser(ctx context.Context, companyID uuid.UUID) ([]*ent.CompanyUser, error) {
+	return r.client.CompanyUser.
+		Query().
+		Where(companyuser.CompanyID(companyID)).
+		WithUser().
 		All(ctx)
 }

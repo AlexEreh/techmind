@@ -7,6 +7,7 @@ import (
 	"techmind/internal/service/document"
 	"techmind/internal/service/documenttag"
 	"techmind/internal/service/folder"
+	"techmind/internal/service/sender"
 
 	"go.uber.org/fx"
 )
@@ -19,5 +20,6 @@ var Service = fx.Options(
 		folder.NewService,
 		company_user.NewService,
 		company.NewService,
+		sender.NewService,
 	),
 )

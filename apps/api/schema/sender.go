@@ -18,6 +18,7 @@ func (Sender) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New).
 			Immutable(),
+		field.UUID("company_id", uuid.UUID{}),
 		field.String("name").
 			NotEmpty(),
 		field.String("email").
@@ -29,6 +30,11 @@ func (Sender) Fields() []ent.Field {
 // Edges of the Sender.
 func (Sender) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.From("company", Company.Type).
+			Ref("senders").
+			Field("company_id").
+			Required().
+			Unique(),
 		edge.To("documents", Document.Type),
 	}
 }

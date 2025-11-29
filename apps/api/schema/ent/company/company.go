@@ -23,6 +23,8 @@ const (
 	EdgeDocuments = "documents"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
+	// EdgeSenders holds the string denoting the senders edge name in mutations.
+	EdgeSenders = "senders"
 	// Table holds the table name of the company in the database.
 	Table = "companies"
 	// CompanyUsersTable is the table that holds the company_users relation/edge.
@@ -53,6 +55,13 @@ const (
 	TagsInverseTable = "tags"
 	// TagsColumn is the table column denoting the tags relation/edge.
 	TagsColumn = "company_id"
+	// SendersTable is the table that holds the senders relation/edge.
+	SendersTable = "senders"
+	// SendersInverseTable is the table name for the Sender entity.
+	// It exists in this package in order to avoid circular dependency with the "sender" package.
+	SendersInverseTable = "senders"
+	// SendersColumn is the table column denoting the senders relation/edge.
+	SendersColumn = "company_id"
 )
 
 // Columns holds all SQL columns for company fields.
@@ -146,6 +155,20 @@ func ByTags(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newTagsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySendersCount orders the results by senders count.
+func BySendersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSendersStep(), opts...)
+	}
+}
+
+// BySenders orders the results by senders terms.
+func BySenders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSendersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newCompanyUsersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -172,5 +195,12 @@ func newTagsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TagsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TagsTable, TagsColumn),
+	)
+}
+func newSendersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SendersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SendersTable, SendersColumn),
 	)
 }

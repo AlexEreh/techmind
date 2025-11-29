@@ -30,5 +30,6 @@ func (Company) Edges() []ent.Edge {
 		edge.To("folders", Folder.Type),
 		edge.To("documents", Document.Type),
 		edge.To("tags", Tag.Type),
+		edge.To("senders", Sender.Type),
 	}
 }

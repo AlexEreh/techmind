@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"math"
+	"techmind/schema/ent/company"
 	"techmind/schema/ent/document"
 	"techmind/schema/ent/predicate"
 	"techmind/schema/ent/sender"
@@ -25,6 +26,7 @@ type SenderQuery struct {
 	order         []sender.OrderOption
 	inters        []Interceptor
 	predicates    []predicate.Sender
+	withCompany   *CompanyQuery
 	withDocuments *DocumentQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -61,6 +63,28 @@ func (_q *SenderQuery) Unique(unique bool) *SenderQuery {
 func (_q *SenderQuery) Order(o ...sender.OrderOption) *SenderQuery {
 	_q.order = append(_q.order, o...)
 	return _q
+}
+
+// QueryCompany chains the current query on the "company" edge.
+func (_q *SenderQuery) QueryCompany() *CompanyQuery {
+	query := (&CompanyClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sender.Table, sender.FieldID, selector),
+			sqlgraph.To(company.Table, company.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sender.CompanyTable, sender.CompanyColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryDocuments chains the current query on the "documents" edge.
@@ -277,12 +301,24 @@ func (_q *SenderQuery) Clone() *SenderQuery {
 		order:         append([]sender.OrderOption{}, _q.order...),
 		inters:        append([]Interceptor{}, _q.inters...),
 		predicates:    append([]predicate.Sender{}, _q.predicates...),
+		withCompany:   _q.withCompany.Clone(),
 		withDocuments: _q.withDocuments.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
 		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
+}
+
+// WithCompany tells the query-builder to eager-load the nodes that are connected to
+// the "company" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SenderQuery) WithCompany(opts ...func(*CompanyQuery)) *SenderQuery {
+	query := (&CompanyClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCompany = query
+	return _q
 }
 
 // WithDocuments tells the query-builder to eager-load the nodes that are connected to
@@ -302,12 +338,12 @@ func (_q *SenderQuery) WithDocuments(opts ...func(*DocumentQuery)) *SenderQuery 
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CompanyID uuid.UUID `json:"company_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Sender.Query().
-//		GroupBy(sender.FieldName).
+//		GroupBy(sender.FieldCompanyID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *SenderQuery) GroupBy(field string, fields ...string) *SenderGroupBy {
@@ -325,11 +361,11 @@ func (_q *SenderQuery) GroupBy(field string, fields ...string) *SenderGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CompanyID uuid.UUID `json:"company_id,omitempty"`
 //	}
 //
 //	client.Sender.Query().
-//		Select(sender.FieldName).
+//		Select(sender.FieldCompanyID).
 //		Scan(ctx, &v)
 func (_q *SenderQuery) Select(fields ...string) *SenderSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -374,7 +410,8 @@ func (_q *SenderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sende
 	var (
 		nodes       = []*Sender{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
+			_q.withCompany != nil,
 			_q.withDocuments != nil,
 		}
 	)
@@ -399,6 +436,12 @@ func (_q *SenderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sende
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := _q.withCompany; query != nil {
+		if err := _q.loadCompany(ctx, query, nodes, nil,
+			func(n *Sender, e *Company) { n.Edges.Company = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withDocuments; query != nil {
 		if err := _q.loadDocuments(ctx, query, nodes,
 			func(n *Sender) { n.Edges.Documents = []*Document{} },
@@ -409,6 +452,35 @@ func (_q *SenderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sende
 	return nodes, nil
 }
 
+func (_q *SenderQuery) loadCompany(ctx context.Context, query *CompanyQuery, nodes []*Sender, init func(*Sender), assign func(*Sender, *Company)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Sender)
+	for i := range nodes {
+		fk := nodes[i].CompanyID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(company.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "company_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *SenderQuery) loadDocuments(ctx context.Context, query *DocumentQuery, nodes []*Sender, init func(*Sender), assign func(*Sender, *Document)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Sender)
@@ -470,6 +542,9 @@ func (_q *SenderQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != sender.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withCompany != nil {
+			_spec.Node.AddColumnOnce(sender.FieldCompanyID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

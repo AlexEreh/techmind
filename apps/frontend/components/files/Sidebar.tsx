@@ -5,17 +5,18 @@ import { Tooltip } from '@heroui/tooltip';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  FileIcon,
-  SearchIcon,
-  UploadIcon,
-  TagIcon,
-  UsersIcon,
-  UserIcon,
-  FolderIcon,
+    FileIcon,
+    SearchIcon,
+    UploadIcon,
+    TagIcon,
+    UsersIcon,
+    UserIcon,
+    FolderIcon,
+    BriefcaseIcon,
 } from '@/components/icons';
 
 interface SidebarProps {
-  currentView: 'files' | 'search' | 'tags' | 'users' | 'profile';
+  currentView: 'files' | 'search' | 'tags' | 'users' | 'senders' | 'profile';
   onUploadClick?: () => void;
 }
 
@@ -55,6 +56,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onUploadClick }) 
           onPress={() => router.push('/tags')}
         >
           <TagIcon className="w-5 h-5" />
+        </Button>
+      </Tooltip>
+
+      <Tooltip content="Контрагенты" placement="right">
+        <Button
+          isIconOnly
+          variant={currentView === 'senders' ? 'solid' : 'light'}
+          color={currentView === 'senders' ? 'default' : 'default'}
+          onPress={() => router.push('/senders')}
+        >
+          <BriefcaseIcon className="w-5 h-5" />
         </Button>
       </Tooltip>
 

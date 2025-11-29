@@ -3,6 +3,7 @@ package company_user
 import (
 	"context"
 	"fmt"
+
 	"techmind/internal/repo"
 	"techmind/internal/service"
 	"techmind/schema/ent"
@@ -34,4 +35,12 @@ func (s *companyUserService) GetUserCompanies(ctx context.Context, userID uuid.U
 		return nil, fmt.Errorf("failed to get user companies: %w", err)
 	}
 	return companies, nil
+}
+
+func (s *companyUserService) GetCompanyUsers(ctx context.Context, companyID uuid.UUID) ([]*ent.CompanyUser, error) {
+	users, err := s.repo.ListByCompanyWithUser(ctx, companyID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get company users: %w", err)
+	}
+	return users, nil
 }

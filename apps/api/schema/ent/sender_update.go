@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"techmind/schema/ent/company"
 	"techmind/schema/ent/document"
 	"techmind/schema/ent/predicate"
 	"techmind/schema/ent/sender"
@@ -27,6 +28,20 @@ type SenderUpdate struct {
 // Where appends a list predicates to the SenderUpdate builder.
 func (_u *SenderUpdate) Where(ps ...predicate.Sender) *SenderUpdate {
 	_u.mutation.Where(ps...)
+	return _u
+}
+
+// SetCompanyID sets the "company_id" field.
+func (_u *SenderUpdate) SetCompanyID(v uuid.UUID) *SenderUpdate {
+	_u.mutation.SetCompanyID(v)
+	return _u
+}
+
+// SetNillableCompanyID sets the "company_id" field if the given value is not nil.
+func (_u *SenderUpdate) SetNillableCompanyID(v *uuid.UUID) *SenderUpdate {
+	if v != nil {
+		_u.SetCompanyID(*v)
+	}
 	return _u
 }
 
@@ -64,6 +79,11 @@ func (_u *SenderUpdate) ClearEmail() *SenderUpdate {
 	return _u
 }
 
+// SetCompany sets the "company" edge to the Company entity.
+func (_u *SenderUpdate) SetCompany(v *Company) *SenderUpdate {
+	return _u.SetCompanyID(v.ID)
+}
+
 // AddDocumentIDs adds the "documents" edge to the Document entity by IDs.
 func (_u *SenderUpdate) AddDocumentIDs(ids ...uuid.UUID) *SenderUpdate {
 	_u.mutation.AddDocumentIDs(ids...)
@@ -82,6 +102,12 @@ func (_u *SenderUpdate) AddDocuments(v ...*Document) *SenderUpdate {
 // Mutation returns the SenderMutation object of the builder.
 func (_u *SenderUpdate) Mutation() *SenderMutation {
 	return _u.mutation
+}
+
+// ClearCompany clears the "company" edge to the Company entity.
+func (_u *SenderUpdate) ClearCompany() *SenderUpdate {
+	_u.mutation.ClearCompany()
+	return _u
 }
 
 // ClearDocuments clears all "documents" edges to the Document entity.
@@ -139,6 +165,9 @@ func (_u *SenderUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Sender.name": %w`, err)}
 		}
 	}
+	if _u.mutation.CompanyCleared() && len(_u.mutation.CompanyIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Sender.company"`)
+	}
 	return nil
 }
 
@@ -168,6 +197,35 @@ func (_u *SenderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.EmailCleared() {
 		_spec.ClearField(sender.FieldEmail, field.TypeString)
+	}
+	if _u.mutation.CompanyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sender.CompanyTable,
+			Columns: []string{sender.CompanyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(company.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CompanyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sender.CompanyTable,
+			Columns: []string{sender.CompanyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(company.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.DocumentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -236,6 +294,20 @@ type SenderUpdateOne struct {
 	modifiers []func(*sql.UpdateBuilder)
 }
 
+// SetCompanyID sets the "company_id" field.
+func (_u *SenderUpdateOne) SetCompanyID(v uuid.UUID) *SenderUpdateOne {
+	_u.mutation.SetCompanyID(v)
+	return _u
+}
+
+// SetNillableCompanyID sets the "company_id" field if the given value is not nil.
+func (_u *SenderUpdateOne) SetNillableCompanyID(v *uuid.UUID) *SenderUpdateOne {
+	if v != nil {
+		_u.SetCompanyID(*v)
+	}
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *SenderUpdateOne) SetName(v string) *SenderUpdateOne {
 	_u.mutation.SetName(v)
@@ -270,6 +342,11 @@ func (_u *SenderUpdateOne) ClearEmail() *SenderUpdateOne {
 	return _u
 }
 
+// SetCompany sets the "company" edge to the Company entity.
+func (_u *SenderUpdateOne) SetCompany(v *Company) *SenderUpdateOne {
+	return _u.SetCompanyID(v.ID)
+}
+
 // AddDocumentIDs adds the "documents" edge to the Document entity by IDs.
 func (_u *SenderUpdateOne) AddDocumentIDs(ids ...uuid.UUID) *SenderUpdateOne {
 	_u.mutation.AddDocumentIDs(ids...)
@@ -288,6 +365,12 @@ func (_u *SenderUpdateOne) AddDocuments(v ...*Document) *SenderUpdateOne {
 // Mutation returns the SenderMutation object of the builder.
 func (_u *SenderUpdateOne) Mutation() *SenderMutation {
 	return _u.mutation
+}
+
+// ClearCompany clears the "company" edge to the Company entity.
+func (_u *SenderUpdateOne) ClearCompany() *SenderUpdateOne {
+	_u.mutation.ClearCompany()
+	return _u
 }
 
 // ClearDocuments clears all "documents" edges to the Document entity.
@@ -358,6 +441,9 @@ func (_u *SenderUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Sender.name": %w`, err)}
 		}
 	}
+	if _u.mutation.CompanyCleared() && len(_u.mutation.CompanyIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Sender.company"`)
+	}
 	return nil
 }
 
@@ -404,6 +490,35 @@ func (_u *SenderUpdateOne) sqlSave(ctx context.Context) (_node *Sender, err erro
 	}
 	if _u.mutation.EmailCleared() {
 		_spec.ClearField(sender.FieldEmail, field.TypeString)
+	}
+	if _u.mutation.CompanyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sender.CompanyTable,
+			Columns: []string{sender.CompanyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(company.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CompanyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sender.CompanyTable,
+			Columns: []string{sender.CompanyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(company.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.DocumentsCleared() {
 		edge := &sqlgraph.EdgeSpec{

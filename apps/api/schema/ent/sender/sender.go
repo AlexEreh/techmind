@@ -13,14 +13,25 @@ const (
 	Label = "sender"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCompanyID holds the string denoting the company_id field in the database.
+	FieldCompanyID = "company_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
+	// EdgeCompany holds the string denoting the company edge name in mutations.
+	EdgeCompany = "company"
 	// EdgeDocuments holds the string denoting the documents edge name in mutations.
 	EdgeDocuments = "documents"
 	// Table holds the table name of the sender in the database.
 	Table = "senders"
+	// CompanyTable is the table that holds the company relation/edge.
+	CompanyTable = "senders"
+	// CompanyInverseTable is the table name for the Company entity.
+	// It exists in this package in order to avoid circular dependency with the "company" package.
+	CompanyInverseTable = "companies"
+	// CompanyColumn is the table column denoting the company relation/edge.
+	CompanyColumn = "company_id"
 	// DocumentsTable is the table that holds the documents relation/edge.
 	DocumentsTable = "documents"
 	// DocumentsInverseTable is the table name for the Document entity.
@@ -33,6 +44,7 @@ const (
 // Columns holds all SQL columns for sender fields.
 var Columns = []string{
 	FieldID,
+	FieldCompanyID,
 	FieldName,
 	FieldEmail,
 }
@@ -62,6 +74,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
+// ByCompanyID orders the results by the company_id field.
+func ByCompanyID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCompanyID, opts...).ToFunc()
+}
+
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
@@ -70,6 +87,13 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByEmail orders the results by the email field.
 func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+}
+
+// ByCompanyField orders the results by company field.
+func ByCompanyField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCompanyStep(), sql.OrderByField(field, opts...))
+	}
 }
 
 // ByDocumentsCount orders the results by documents count.
@@ -84,6 +108,13 @@ func ByDocuments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newDocumentsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
+}
+func newCompanyStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CompanyInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, CompanyTable, CompanyColumn),
+	)
 }
 func newDocumentsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

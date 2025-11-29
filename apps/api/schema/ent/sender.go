@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"techmind/schema/ent/company"
 	"techmind/schema/ent/sender"
 
 	"entgo.io/ent"
@@ -17,6 +18,8 @@ type Sender struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
+	// CompanyID holds the value of the "company_id" field.
+	CompanyID uuid.UUID `json:"company_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Email holds the value of the "email" field.
@@ -29,17 +32,30 @@ type Sender struct {
 
 // SenderEdges holds the relations/edges for other nodes in the graph.
 type SenderEdges struct {
+	// Company holds the value of the company edge.
+	Company *Company `json:"company,omitempty"`
 	// Documents holds the value of the documents edge.
 	Documents []*Document `json:"documents,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// CompanyOrErr returns the Company value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SenderEdges) CompanyOrErr() (*Company, error) {
+	if e.Company != nil {
+		return e.Company, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: company.Label}
+	}
+	return nil, &NotLoadedError{edge: "company"}
 }
 
 // DocumentsOrErr returns the Documents value or an error if the edge
 // was not loaded in eager-loading.
 func (e SenderEdges) DocumentsOrErr() ([]*Document, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Documents, nil
 	}
 	return nil, &NotLoadedError{edge: "documents"}
@@ -52,7 +68,7 @@ func (*Sender) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case sender.FieldName, sender.FieldEmail:
 			values[i] = new(sql.NullString)
-		case sender.FieldID:
+		case sender.FieldID, sender.FieldCompanyID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -74,6 +90,12 @@ func (_m *Sender) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
+			}
+		case sender.FieldCompanyID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field company_id", values[i])
+			} else if value != nil {
+				_m.CompanyID = *value
 			}
 		case sender.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -99,6 +121,11 @@ func (_m *Sender) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Sender) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryCompany queries the "company" edge of the Sender entity.
+func (_m *Sender) QueryCompany() *CompanyQuery {
+	return NewSenderClient(_m.config).QueryCompany(_m)
 }
 
 // QueryDocuments queries the "documents" edge of the Sender entity.
@@ -129,6 +156,9 @@ func (_m *Sender) String() string {
 	var builder strings.Builder
 	builder.WriteString("Sender(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("company_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CompanyID))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")

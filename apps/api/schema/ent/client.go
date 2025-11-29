@@ -439,6 +439,22 @@ func (c *CompanyClient) QueryTags(_m *Company) *TagQuery {
 	return query
 }
 
+// QuerySenders queries the senders edge of a Company.
+func (c *CompanyClient) QuerySenders(_m *Company) *SenderQuery {
+	query := (&SenderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(company.Table, company.FieldID, id),
+			sqlgraph.To(sender.Table, sender.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, company.SendersTable, company.SendersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CompanyClient) Hooks() []Hook {
 	return c.hooks.Company
@@ -1294,6 +1310,22 @@ func (c *SenderClient) GetX(ctx context.Context, id uuid.UUID) *Sender {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryCompany queries the company edge of a Sender.
+func (c *SenderClient) QueryCompany(_m *Sender) *CompanyQuery {
+	query := (&CompanyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sender.Table, sender.FieldID, id),
+			sqlgraph.To(company.Table, company.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sender.CompanyTable, sender.CompanyColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryDocuments queries the documents edge of a Sender.

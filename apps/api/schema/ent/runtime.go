@@ -33,6 +33,10 @@ func init() {
 	company.DefaultID = companyDescID.Default.(func() uuid.UUID)
 	companyuserFields := schema.CompanyUser{}.Fields()
 	_ = companyuserFields
+	// companyuserDescAddedAt is the schema descriptor for added_at field.
+	companyuserDescAddedAt := companyuserFields[4].Descriptor()
+	// companyuser.DefaultAddedAt holds the default value on creation for the added_at field.
+	companyuser.DefaultAddedAt = companyuserDescAddedAt.Default.(func() time.Time)
 	// companyuserDescID is the schema descriptor for id field.
 	companyuserDescID := companyuserFields[0].Descriptor()
 	// companyuser.DefaultID holds the default value on creation for the id field.
@@ -94,7 +98,7 @@ func init() {
 	senderFields := schema.Sender{}.Fields()
 	_ = senderFields
 	// senderDescName is the schema descriptor for name field.
-	senderDescName := senderFields[1].Descriptor()
+	senderDescName := senderFields[2].Descriptor()
 	// sender.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	sender.NameValidator = senderDescName.Validators[0].(func(string) error)
 	// senderDescID is the schema descriptor for id field.

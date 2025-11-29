@@ -4,6 +4,7 @@ package companyuser
 
 import (
 	"techmind/schema/ent/predicate"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -68,6 +69,11 @@ func CompanyID(v uuid.UUID) predicate.CompanyUser {
 // Role applies equality check predicate on the "role" field. It's identical to RoleEQ.
 func Role(v int) predicate.CompanyUser {
 	return predicate.CompanyUser(sql.FieldEQ(FieldRole, v))
+}
+
+// AddedAt applies equality check predicate on the "added_at" field. It's identical to AddedAtEQ.
+func AddedAt(v time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldEQ(FieldAddedAt, v))
 }
 
 // UserIDEQ applies the EQ predicate on the "user_id" field.
@@ -148,6 +154,46 @@ func RoleLT(v int) predicate.CompanyUser {
 // RoleLTE applies the LTE predicate on the "role" field.
 func RoleLTE(v int) predicate.CompanyUser {
 	return predicate.CompanyUser(sql.FieldLTE(FieldRole, v))
+}
+
+// AddedAtEQ applies the EQ predicate on the "added_at" field.
+func AddedAtEQ(v time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldEQ(FieldAddedAt, v))
+}
+
+// AddedAtNEQ applies the NEQ predicate on the "added_at" field.
+func AddedAtNEQ(v time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldNEQ(FieldAddedAt, v))
+}
+
+// AddedAtIn applies the In predicate on the "added_at" field.
+func AddedAtIn(vs ...time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldIn(FieldAddedAt, vs...))
+}
+
+// AddedAtNotIn applies the NotIn predicate on the "added_at" field.
+func AddedAtNotIn(vs ...time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldNotIn(FieldAddedAt, vs...))
+}
+
+// AddedAtGT applies the GT predicate on the "added_at" field.
+func AddedAtGT(v time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldGT(FieldAddedAt, v))
+}
+
+// AddedAtGTE applies the GTE predicate on the "added_at" field.
+func AddedAtGTE(v time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldGTE(FieldAddedAt, v))
+}
+
+// AddedAtLT applies the LT predicate on the "added_at" field.
+func AddedAtLT(v time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldLT(FieldAddedAt, v))
+}
+
+// AddedAtLTE applies the LTE predicate on the "added_at" field.
+func AddedAtLTE(v time.Time) predicate.CompanyUser {
+	return predicate.CompanyUser(sql.FieldLTE(FieldAddedAt, v))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

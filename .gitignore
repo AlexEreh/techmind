@@ -4,4 +4,6 @@ pgdata
 prod.yml
 example.json
 example.csv
+apps/api/bin/**
+apps/api/main
 .idea/

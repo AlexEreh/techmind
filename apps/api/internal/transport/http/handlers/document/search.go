@@ -59,11 +59,22 @@ func (h *SearchHandler) Handle(c fiber.Ctx) error {
 			})
 		}
 
+		var senderData *SenderData
+		if docWithTags.Document.Edges.Sender != nil {
+			senderData = &SenderData{
+				ID:        docWithTags.Document.Edges.Sender.ID,
+				CompanyID: docWithTags.Document.Edges.Sender.CompanyID,
+				Name:      docWithTags.Document.Edges.Sender.Name,
+				Email:     docWithTags.Document.Edges.Sender.Email,
+			}
+		}
+
 		response.Documents = append(response.Documents, DocumentResponse{
 			ID:              docWithTags.Document.ID,
 			CompanyID:       docWithTags.Document.CompanyID,
 			FolderID:        docWithTags.Document.FolderID,
 			SenderID:        docWithTags.Document.SenderID,
+			Sender:          senderData,
 			Name:            docWithTags.Document.Name,
 			FilePath:        docWithTags.Document.FilePath,
 			PreviewFilePath: docWithTags.Document.PreviewFilePath,
