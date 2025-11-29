@@ -51,6 +51,14 @@ services:
     networks:
       - shared_network
 
+  sajaridocd:
+    image: sajari/docd:latest
+    command: ["/docd", "-addr", ":8888"]
+    ports:
+      - "8888:8888"
+    networks:
+      - shared_network
+
 networks:
   shared_network:
     driver: bridge

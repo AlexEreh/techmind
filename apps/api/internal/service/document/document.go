@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -15,6 +16,9 @@ import (
 	"techmind/pkg/gotenberg"
 	"techmind/schema/ent"
 
+	"code.sajari.com/docconv/v2/client"
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 )
@@ -92,13 +96,14 @@ var AllowedExtensions = map[string]bool{
 }
 
 type documentService struct {
-	documentRepo    repo.DocumentRepository
-	documentTagRepo repo.DocumentTagRepository
-	tagRepo         repo.TagRepository
-	folderRepo      repo.FolderRepository
-	minioClient     *minio.Client
-	bucketName      string
-	gotenbergClient *gotenberg.Client
+	documentRepo        repo.DocumentRepository
+	documentTagRepo     repo.DocumentTagRepository
+	tagRepo             repo.TagRepository
+	folderRepo          repo.FolderRepository
+	minioClient         *minio.Client
+	bucketName          string
+	gotenbergClient     *gotenberg.Client
+	elasticsearchClient *elasticsearch.Client
 }
 
 func NewService(
@@ -108,16 +113,18 @@ func NewService(
 	folderRepo repo.FolderRepository,
 	minioClient *minio.Client,
 	gotenbergClient *gotenberg.Client,
+	elasticsearchClient *elasticsearch.Client,
 ) service.DocumentService {
 
 	return &documentService{
-		documentRepo:    documentRepo,
-		documentTagRepo: documentTagRepo,
-		tagRepo:         tagRepo,
-		folderRepo:      folderRepo,
-		minioClient:     minioClient,
-		bucketName:      "documents",
-		gotenbergClient: gotenbergClient,
+		documentRepo:        documentRepo,
+		documentTagRepo:     documentTagRepo,
+		tagRepo:             tagRepo,
+		folderRepo:          folderRepo,
+		minioClient:         minioClient,
+		bucketName:          "documents",
+		gotenbergClient:     gotenbergClient,
+		elasticsearchClient: elasticsearchClient,
 	}
 }
 
@@ -204,6 +211,21 @@ func (s *documentService) Upload(ctx context.Context, input service.DocumentUplo
 				// Логируем ошибку, но не прерываем процесс загрузки
 				// В продакшене здесь должно быть логирование через logger
 				fmt.Printf("Failed to generate preview for document %s: %v\n", document.ID, err)
+			}
+		}()
+	}
+
+	// Извлечение текста и индексация в Elasticsearch
+	if s.isExtractableText(input.MimeType) {
+		// Запускаем извлечение текста асинхронно
+		go func() {
+			// Создаем новый контекст с таймаутом для фоновой задачи
+			extractCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+
+			if err := s.ExtractAndIndexText(extractCtx, document.ID); err != nil {
+				// Логируем ошибку, но не прерываем процесс загрузки
+				fmt.Printf("Failed to extract and index text for document %s: %v\n", document.ID, err)
 			}
 		}()
 	}
@@ -610,6 +632,132 @@ func (s *documentService) isOfficeDocument(mimeType string) bool {
 
 	for _, ot := range officeTypes {
 		if strings.EqualFold(mimeType, ot) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// ExtractAndIndexText извлекает текст из документа и индексирует его в Elasticsearch
+// Использует docconv для извлечения текста из различных форматов документов
+// Сохраняет извлеченный текст в индекс "documents" в Elasticsearch
+func (s *documentService) ExtractAndIndexText(ctx context.Context, documentID uuid.UUID) error {
+	// Получаем документ из БД
+	document, err := s.documentRepo.GetByID(ctx, documentID)
+	if err != nil {
+		return fmt.Errorf("document not found: %w", err)
+	}
+
+	// Проверяем что документ поддерживает извлечение текста
+	if !s.isExtractableText(document.MimeType) {
+		return fmt.Errorf("document type %s does not support text extraction", document.MimeType)
+	}
+
+	// Скачиваем оригинальный файл из MinIO
+	object, err := s.minioClient.GetObject(ctx, s.bucketName, document.FilePath, minio.GetObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get file from minio: %w", err)
+	}
+	defer object.Close()
+
+	// Извлекаем текст с помощью docconv
+	c := client.New()
+	convRes, err := c.Convert(object, document.Name)
+	if err != nil {
+		return fmt.Errorf("failed to extract text from document: %w", err)
+	}
+
+	// Очищаем текст от лишних пробелов и переносов строк
+	extractedText := strings.TrimSpace(convRes.Body)
+	if extractedText == "" {
+		return fmt.Errorf("no text extracted from document")
+	}
+
+	// Подготавливаем документ для индексации в Elasticsearch
+	// Индекс: documents
+	// ID документа: UUID документа
+	esDocument := map[string]interface{}{
+		"document_id": document.ID.String(),
+		"company_id":  document.CompanyID.String(),
+		"folder_id":   nil,
+		"name":        document.Name,
+		"text":        extractedText,
+		"mime_type":   document.MimeType,
+		"file_size":   document.FileSize,
+		"indexed_at":  time.Now().Format(time.RFC3339),
+	}
+
+	if document.FolderID != nil {
+		esDocument["folder_id"] = document.FolderID.String()
+	}
+
+	// Сериализуем в JSON
+	docJSON, err := json.Marshal(esDocument)
+	if err != nil {
+		return fmt.Errorf("failed to marshal document for elasticsearch: %w", err)
+	}
+
+	// Индексируем документ в Elasticsearch
+	req := esapi.IndexRequest{
+		Index:      "documents",
+		DocumentID: document.ID.String(),
+		Body:       bytes.NewReader(docJSON),
+		Refresh:    "true",
+	}
+
+	esRes, err := req.Do(ctx, s.elasticsearchClient)
+	if err != nil {
+		return fmt.Errorf("failed to index document in elasticsearch: %w", err)
+	}
+	defer esRes.Body.Close()
+
+	if esRes.IsError() {
+		return fmt.Errorf("elasticsearch indexing error: %s", esRes.String())
+	}
+
+	fmt.Printf("Successfully indexed document %s in Elasticsearch index 'documents'\n", document.ID)
+	return nil
+}
+
+// isExtractableText проверяет, можно ли извлечь текст из документа
+func (s *documentService) isExtractableText(mimeType string) bool {
+	extractableTypes := []string{
+		// PDF
+		"application/pdf",
+
+		// Microsoft Office
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",   // docx
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",         // xlsx
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation", // pptx
+		"application/msword",            // doc
+		"application/vnd.ms-excel",      // xls
+		"application/vnd.ms-powerpoint", // ppt
+
+		// OpenDocument
+		"application/vnd.oasis.opendocument.text",         // odt
+		"application/vnd.oasis.opendocument.spreadsheet",  // ods
+		"application/vnd.oasis.opendocument.presentation", // odp
+
+		// Rich Text
+		"application/rtf",
+		"text/rtf",
+
+		// Plain text
+		"text/plain",
+		"text/csv",
+
+		// HTML
+		"text/html",
+
+		// Images (если docconv поддерживает OCR)
+		"image/jpeg",
+		"image/png",
+		"image/tiff",
+	}
+
+	for _, et := range extractableTypes {
+		if strings.EqualFold(mimeType, et) {
 			return true
 		}
 	}

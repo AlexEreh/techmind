@@ -73,6 +73,36 @@ func initializeElasticsearchIndex(client *elasticsearch.Client) {
 				},
 			},
 		},
+		"mappings": map[string]interface{}{
+			"properties": map[string]interface{}{
+				"document_id": map[string]interface{}{
+					"type": "keyword",
+				},
+				"company_id": map[string]interface{}{
+					"type": "keyword",
+				},
+				"folder_id": map[string]interface{}{
+					"type": "keyword",
+				},
+				"name": map[string]interface{}{
+					"type":     "text",
+					"analyzer": "rebuilt_russian",
+				},
+				"text": map[string]interface{}{
+					"type":     "text",
+					"analyzer": "rebuilt_russian",
+				},
+				"mime_type": map[string]interface{}{
+					"type": "keyword",
+				},
+				"file_size": map[string]interface{}{
+					"type": "long",
+				},
+				"indexed_at": map[string]interface{}{
+					"type": "date",
+				},
+			},
+		},
 	}
 
 	body, err := json.Marshal(settings)
