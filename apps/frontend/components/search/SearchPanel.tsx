@@ -114,7 +114,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
       </div>
 
       <Button
-        color="primary"
+        color="default"
         onPress={handleSearch}
         isLoading={isLoading}
         className="w-full"
